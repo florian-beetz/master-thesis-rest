@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik
+    command:
+      #- "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8090:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+
+  inventory:
+    build: ./inventory-service
+    environment:
+      - INVENTORY_DB_HOST=inventory_db
+      - INVENTORY_DB_PORT=5432
+      - INVENTORY_DB_DATABASE=postgres
+      - INVENTORY_DB_USER=postgres
+      - INVENTORY_DB_PASSWORD=${INV_DB_PASSWORD}
+    depends_on:
+      - inventory_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.inventory.rule=PathPrefix(`/inventory/`)"
+      - "traefik.http.routers.inventory.entrypoints=web"
+
+
+  inventory_db:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=${INV_DB_PASSWORD}

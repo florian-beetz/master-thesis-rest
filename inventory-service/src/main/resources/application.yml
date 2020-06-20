@@ -1,0 +1,21 @@
+logging:
+  level:
+    .: INFO
+    de.florianbeetz: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+
+server:
+  servlet:
+    context-path: /inventory
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${INVENTORY_DB_HOST}:${INVENTORY_DB_PORT}/${INVENTORY_DB_DATABASE}
+    username: ${INVENTORY_DB_USER}
+    password: ${INVENTORY_DB_PASSWORD}
+  jpa:
+    generate-ddl: true
+
+springdoc:
+  api-docs:
+    path: /api/docs
