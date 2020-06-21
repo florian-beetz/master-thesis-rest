@@ -1,28 +1,32 @@
 package de.florianbeetz.ma.rest.inventory.api.v1;
 
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
 import de.florianbeetz.ma.rest.inventory.data.ItemRepository;
 import de.florianbeetz.ma.rest.inventory.data.ItemStockEntity;
 import de.florianbeetz.ma.rest.inventory.data.ItemStockRepository;
 import de.florianbeetz.ma.rest.inventory.data.WarehouseRepository;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.links.Link;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.CollectionModel;
-import org.springframework.hateoas.MediaTypes;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -43,10 +47,8 @@ public class ItemStockController {
     }
 
     @Operation(summary = "List stock of item")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Listing of the stock"),
-            @ApiResponse(responseCode = "404", description = "Item does not exist")
-    })
+    @ApiResponse(responseCode = "200", description = "Listing of the stock")
+    @ApiResponse(responseCode = "404", description = "Item does not exist")
     @GetMapping("/{id}/stock/")
     public ResponseEntity<CollectionModel<ItemStock>> getStockOfItem(@PathVariable("id") long itemId,
                                                                      @RequestParam(value = "page", defaultValue = "0") int page,
@@ -65,10 +67,8 @@ public class ItemStockController {
     }
 
     @Operation(summary = "Get stock by its ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Stock found"),
-            @ApiResponse(responseCode = "404", description = "Stock not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Stock found")
+    @ApiResponse(responseCode = "404", description = "Stock not found")
     @GetMapping("/{itemId}/stock/{stockId}")
     public ResponseEntity<ItemStock> getStock(@PathVariable("itemId") long itemId,
                                               @PathVariable("stockId") long stockId) {
@@ -77,11 +77,9 @@ public class ItemStockController {
     }
 
     @Operation(summary = "Create a new stock position")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Stock position created"),
-            @ApiResponse(responseCode = "400", description = "Invalid request (warehouse invalid or available > inStock)"),
+            @ApiResponse(responseCode = "201", description = "Stock position created")
+            @ApiResponse(responseCode = "400", description = "Invalid request (warehouse invalid or available > inStock)")
             @ApiResponse(responseCode = "404", description = "Item or warehouse does not exist")
-    })
     @PostMapping("/{itemId}/stock/")
     public ResponseEntity<ItemStock> createStock(@PathVariable("itemId") long itemId,
                                                  @RequestBody ItemStock stock) {
@@ -116,15 +114,13 @@ public class ItemStockController {
     }
 
     @Operation(summary = "Update a stock position")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "stock position updated",
-                    content = {
-                            @Content(mediaType = "application/hal+json",
-                                    schema = @Schema(implementation = ItemStock.class))
-                    }),
-            @ApiResponse(responseCode = "400", description = "invalid request: available > inStock"),
-            @ApiResponse(responseCode = "404", description = "item not found")
-    })
+    @ApiResponse(responseCode = "200", description = "stock position updated",
+            content = {
+                    @Content(mediaType = "application/hal+json",
+                            schema = @Schema(implementation = ItemStock.class))
+            })
+    @ApiResponse(responseCode = "400", description = "invalid request: available > inStock")
+    @ApiResponse(responseCode = "404", description = "item not found")
     @PatchMapping("/{itemId}/stock/{stockId}")
     public ResponseEntity<ItemStock> updateStock(@RequestBody ItemStock stock,
                                                  @PathVariable("itemId") long itemId,
@@ -153,12 +149,10 @@ public class ItemStockController {
     }
 
     @Operation(summary = "Deletes a stock position")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "stock position deleted"),
-            @ApiResponse(responseCode = "404", description = "stock position not found")
-    })
+    @ApiResponse(responseCode = "200", description = "stock position deleted")
+    @ApiResponse(responseCode = "404", description = "stock position not found")
     @DeleteMapping("/{itemId}/stock/{stockId}")
-    public ResponseEntity<?> deleteStock(@PathVariable("itemId") long itemId,
+    public ResponseEntity<Object> deleteStock(@PathVariable("itemId") long itemId,
                                          @PathVariable("stockId") long stockId) {
         val stock = itemStockRepository.findById(stockId);
 

@@ -1,19 +1,24 @@
 package de.florianbeetz.ma.rest.inventory.api.v1;
 
+import java.util.stream.Collectors;
+
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
 import de.florianbeetz.ma.rest.inventory.data.ItemEntity;
 import de.florianbeetz.ma.rest.inventory.data.ItemRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.stream.Collectors;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -29,9 +34,7 @@ public class ItemController {
     }
 
     @Operation(summary = "List all items")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Listing of the items")
-    })
+    @ApiResponse(responseCode = "200", description = "Listing of the items")
     @GetMapping(value = "/")
     public CollectionModel<Item> getItems(@RequestParam(value = "page", defaultValue = "0") Integer page,
                                           @RequestParam(value = "size", defaultValue = "20") Integer size) {
@@ -45,19 +48,15 @@ public class ItemController {
     }
 
     @Operation(summary = "Get an item by its id")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Item found"),
-            @ApiResponse(responseCode = "404", description = "Item not found")
-    })
+    @ApiResponse(responseCode = "200", description = "Item found")
+    @ApiResponse(responseCode = "404", description = "Item not found")
     @GetMapping("/{id}")
     public ResponseEntity<Item> getItem(@PathVariable("id") long id) {
         return ResponseEntity.of(itemRepository.findById(id).map(Item::from));
     }
 
     @Operation(summary = "Create a new item")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Item created")
-    })
+    @ApiResponse(responseCode = "201", description = "Item created")
     @PostMapping("/")
     public ResponseEntity<Item> createItem(@RequestBody Item item) {
         ItemEntity entity = itemRepository.save(item.toEntity());

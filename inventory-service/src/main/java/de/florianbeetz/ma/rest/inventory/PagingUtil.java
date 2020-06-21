@@ -1,5 +1,7 @@
 package de.florianbeetz.ma.rest.inventory;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.val;
 import org.springframework.data.domain.Page;
 import org.springframework.hateoas.CollectionModel;
@@ -20,6 +22,8 @@ public class PagingUtil {
     public static final LinkRelation NEXT_RELATION = LinkRelation.of("next");
     /** link relation for the last page */
     public static final LinkRelation LAST_RELATION = LinkRelation.of("last");
+
+    private PagingUtil() {}
 
     /**
      * Creates a paginated {@link CollectionModel} of the given items and adds links for navigating the pages.
