@@ -1,7 +1,13 @@
 package de.florianbeetz.ma.rest.inventory.api.v1;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import javax.xml.bind.DatatypeConverter;
 
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
 import de.florianbeetz.ma.rest.inventory.data.ItemRepository;
@@ -12,18 +18,24 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import lombok.SneakyThrows;
 import lombok.val;
+import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -73,7 +85,14 @@ public class ItemStockController {
     public ResponseEntity<ItemStock> getStock(@PathVariable("itemId") long itemId,
                                               @PathVariable("stockId") long stockId) {
         val stock = itemStockRepository.findById(stockId);
-        return ResponseEntity.of(stock.map(ItemStock::from));
+
+        if (stock.isPresent()) {
+            val headers = new HttpHeaders();
+            headers.setETag(calculateEtag(stock.get().toString()));
+            return new ResponseEntity<>(ItemStock.from(stock.get()), headers, HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 
     @Operation(summary = "Create a new stock position")
@@ -121,10 +140,15 @@ public class ItemStockController {
             })
     @ApiResponse(responseCode = "400", description = "invalid request: available > inStock")
     @ApiResponse(responseCode = "404", description = "item not found")
-    @PatchMapping("/{itemId}/stock/{stockId}")
+    @PutMapping("/{itemId}/stock/{stockId}")
     public ResponseEntity<ItemStock> updateStock(@RequestBody ItemStock stock,
                                                  @PathVariable("itemId") long itemId,
-                                                 @PathVariable("stockId") long stockId) {
+                                                 @PathVariable("stockId") long stockId,
+                                                 @RequestHeader("etag") String etag) {
+        if (etag == null) {
+            return new ResponseEntity<>(HttpStatus.PRECONDITION_REQUIRED);
+        }
+
         val entity = itemStockRepository.findById(stockId);
         if (entity.isEmpty()) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -132,20 +156,22 @@ public class ItemStockController {
 
         var itemStock = entity.get();
 
-        val updatedInStock = itemStock.getInStock() + Optional.ofNullable(stock.getInStock()).orElse(0L);
-        val updatedAvailable = itemStock.getAvailable() + Optional.ofNullable(stock.getAvailable()).orElse(0L);
+        if (!etag.equals(calculateEtag(itemStock.toString()))) {
+            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+        }
 
-        //noinspection ConditionCoveredByFurtherCondition
-        if (updatedInStock < 0 || updatedAvailable < 0 || updatedInStock < updatedAvailable) {
+        if (stock.getAvailable() < 0 || stock.getInStock() < 0 || stock.getAvailable() > stock.getInStock()) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        itemStock.setInStock(updatedInStock);
-        itemStock.setAvailable(updatedAvailable);
+        itemStock.setInStock(stock.getInStock());
+        itemStock.setAvailable(stock.getAvailable());
 
         itemStock = itemStockRepository.save(itemStock);
 
-        return ResponseEntity.ok(ItemStock.from(itemStock));
+        val headers = new HttpHeaders();
+        headers.setETag(calculateEtag(itemStock.toString()));
+        return new ResponseEntity<>(ItemStock.from(itemStock), headers, HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes a stock position")
@@ -162,5 +188,15 @@ public class ItemStockController {
 
         itemStockRepository.delete(stock.get());
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    @SneakyThrows(NoSuchAlgorithmException.class)
+    public static String calculateEtag(final String input) {
+        final ByteBuffer buf = StandardCharsets.UTF_8.encode(input);
+        final MessageDigest digest = MessageDigest.getInstance("SHA1");
+        buf.mark();
+        digest.update(buf);
+        buf.reset();
+        return String.format("W/\"%s\"", DatatypeConverter.printHexBinary(digest.digest()));
     }
 }
