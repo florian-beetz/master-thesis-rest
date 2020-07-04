@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import javax.xml.bind.DatatypeConverter;
@@ -20,17 +19,15 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.SneakyThrows;
 import lombok.val;
-import org.apache.coyote.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -70,7 +67,7 @@ public class ItemStockController {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        val itemStockPage = itemStockRepository.findAllByItem(itemEntity.get(), PageRequest.of(page, size));
+        val itemStockPage = itemStockRepository.findAllByItem(itemEntity.get(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "available")));
         val itemStock = itemStockPage.get()
                 .map(ItemStock::from)
                 .collect(Collectors.toList());
@@ -140,11 +137,13 @@ public class ItemStockController {
             })
     @ApiResponse(responseCode = "400", description = "invalid request: available > inStock")
     @ApiResponse(responseCode = "404", description = "item not found")
+    @ApiResponse(responseCode = "428", description = "no ETag provided")
+    @ApiResponse(responseCode = "412", description = "ETag does not match")
     @PutMapping("/{itemId}/stock/{stockId}")
     public ResponseEntity<ItemStock> updateStock(@RequestBody ItemStock stock,
                                                  @PathVariable("itemId") long itemId,
                                                  @PathVariable("stockId") long stockId,
-                                                 @RequestHeader("etag") String etag) {
+                                                 @RequestHeader(HttpHeaders.IF_MATCH) String etag) {
         if (etag == null) {
             return new ResponseEntity<>(HttpStatus.PRECONDITION_REQUIRED);
         }
