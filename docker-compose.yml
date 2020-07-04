@@ -63,7 +63,7 @@ services:
     build:
       ./shipping-service
     environment:
-      - SHIPPING_DB_HOST=order_db
+      - SHIPPING_DB_HOST=shipping_db
       - SHIPPING_DB_PORT=5432
       - SHIPPING_DB_DATABASE=postgres
       - SHIPPING_DB_USER=postgres
@@ -72,8 +72,8 @@ services:
       - shipping_db
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.order.rule=PathPrefix(`/shipping/`)"
-      - "traefik.http.routers.order.entrypoints=web"
+      - "traefik.http.routers.shipping.rule=PathPrefix(`/shipping/`)"
+      - "traefik.http.routers.shipping.entrypoints=web"
 
   shipping_db:
     image: postgres
