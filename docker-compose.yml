@@ -54,5 +54,7 @@ services:
 
   order_db:
     image: postgres
+    ports:
+    - 5432:5432
     environment:
       - POSTGRES_PASSWORD=${ORD_DB_PASSWORD}

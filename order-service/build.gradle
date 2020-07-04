@@ -7,6 +7,8 @@ plugins {
 group 'de.florianbeetz.ma.rest.order'
 version '1.0-SNAPSHOT'
 
+sourceCompatibility = 14
+targetCompatibility = 14
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -22,6 +24,7 @@ dependencies {
     implementation 'org.springdoc:springdoc-openapi-ui:1.4.1'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'
+    testCompile group: 'com.h2database', name: 'h2', version: '1.4.200'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
         exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
