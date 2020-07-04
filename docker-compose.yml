@@ -23,7 +23,7 @@ services:
       - INVENTORY_DB_PORT=5432
       - INVENTORY_DB_DATABASE=postgres
       - INVENTORY_DB_USER=postgres
-      - INVENTORY_DB_PASSWORD=${INV_DB_PASSWORD}
+      - INVENTORY_DB_PASSWORD=${INVENTORY_DB_PASSWORD}
     depends_on:
       - inventory_db
     labels:
@@ -35,7 +35,7 @@ services:
   inventory_db:
     image: postgres
     environment:
-      - POSTGRES_PASSWORD=${INV_DB_PASSWORD}
+      - POSTGRES_PASSWORD=${INVENTORY_DB_PASSWORD}
 
   orders:
     build: ./order-service
@@ -44,7 +44,7 @@ services:
       - ORDER_DB_PORT=5432
       - ORDER_DB_DATABASE=postgres
       - ORDER_DB_USER=postgres
-      - ORDER_DB_PASSWORD=${ORD_DB_PASSWORD}
+      - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD}
     depends_on:
       - order_db
     labels:
@@ -57,4 +57,27 @@ services:
     ports:
     - 5432:5432
     environment:
-      - POSTGRES_PASSWORD=${ORD_DB_PASSWORD}
+      - POSTGRES_PASSWORD=${ORDER_DB_PASSWORD}
+
+  shipping:
+    build:
+      ./shipping-service
+    environment:
+      - SHIPPING_DB_HOST=order_db
+      - SHIPPING_DB_PORT=5432
+      - SHIPPING_DB_DATABASE=postgres
+      - SHIPPING_DB_USER=postgres
+      - SHIPPING_DB_PASSWORD=${SHIPPING_DB_PASSWORD}
+    depends_on:
+      - shipping_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.order.rule=PathPrefix(`/shipping/`)"
+      - "traefik.http.routers.order.entrypoints=web"
+
+  shipping_db:
+    image: postgres
+    ports:
+      - 5433:5432
+    environment:
+      - POSTGRES_PASSWORD=${SHIPPING_DB_PASSWORD}
