@@ -16,6 +16,9 @@ import de.florianbeetz.ma.rest.order.api.ApiError;
 import de.florianbeetz.ma.rest.order.api.Errors;
 import de.florianbeetz.ma.rest.order.client.inventory.InventoryApi;
 import de.florianbeetz.ma.rest.order.client.inventory.Item;
+import de.florianbeetz.ma.rest.order.client.shipping.Shipment;
+import de.florianbeetz.ma.rest.order.client.shipping.ShippingAddress;
+import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
 import de.florianbeetz.ma.rest.order.data.OrderEntity;
 import de.florianbeetz.ma.rest.order.data.OrderPositionEntity;
 import de.florianbeetz.ma.rest.order.data.OrderPositionRepository;
@@ -47,12 +50,17 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class OrderController {
 
     private final InventoryApi inventoryApi;
+    private final ShippingApi shippingApi;
     private final OrderRepository orderRepository;
     private final OrderPositionRepository orderPositionRepository;
 
     @Autowired
-    public OrderController(InventoryApi inventoryApi, OrderRepository orderRepository, OrderPositionRepository orderPositionRepository) {
+    public OrderController(InventoryApi inventoryApi,
+                           ShippingApi shippingApi,
+                           OrderRepository orderRepository,
+                           OrderPositionRepository orderPositionRepository) {
         this.inventoryApi = inventoryApi;
+        this.shippingApi = shippingApi;
         this.orderRepository = orderRepository;
         this.orderPositionRepository = orderPositionRepository;
     }
@@ -86,13 +94,26 @@ public class OrderController {
         }
 
         // save order
-        val entity = new OrderEntity(null, null, OrderStatus.CREATED.name());
+        val entity = new OrderEntity(null,
+                null,
+                OrderStatus.CREATED.name(),
+                null);
+
         val savedOrder = orderRepository.save(entity);
         positions.forEach(pos -> pos.setOrder(entity));
         val savedPositions = orderPositionRepository.saveAll(positions);
         savedOrder.setPositions(StreamSupport.stream(savedPositions.spliterator(), false).collect(Collectors.toList()));
 
         log.debug("Saved order: {}", entity);
+
+        // create corresponding shipment
+        val shipment = new Shipment(new ShippingAddress(order.getAddress().getStreet(), order.getAddress().getCity(), order.getAddress().getZip()),
+                linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri().toString());
+        val createdShipment = shippingApi.createShipment(shipment);
+
+        // update entity with shipment URL
+        savedOrder.setShipmentUrl(shippingApi.getShipmentUrl(createdShipment));
+        orderRepository.save(savedOrder);
 
         return ResponseEntity.created(linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri())
                              .body(Order.from(savedOrder));
@@ -157,7 +178,6 @@ public class OrderController {
         }
 
         val entityStatus = OrderStatus.from(entity.getStatus());
-
         if (!OrderStatus.isValidStatusTransition(entityStatus, newStatus)) {
             return Errors.ORDER_INVALID_TRANSITION.asResponse();
         }

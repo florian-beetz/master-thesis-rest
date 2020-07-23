@@ -31,6 +31,8 @@ public class OrderEntity {
     @Column(nullable = false)
     private String status;
 
-    // TODO: address, payment information
+    private String shipmentUrl;
+
+    // TODO: payment information
 
 }
