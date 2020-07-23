@@ -2,9 +2,15 @@ package de.florianbeetz.ma.rest.inventory.api.v1;
 
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
+
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
+import de.florianbeetz.ma.rest.inventory.api.ApiError;
+import de.florianbeetz.ma.rest.inventory.api.Errors;
 import de.florianbeetz.ma.rest.inventory.data.WarehouseRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,7 +39,9 @@ public class WarehouseController {
     }
 
     @Operation(summary = "List all warehouses")
-    @ApiResponse(responseCode = "200", description = "Listing of the warehouses")
+    @ApiResponse(responseCode = "200", description = "Listing of the warehouses", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))
+    })
     @GetMapping("/")
     public CollectionModel<Warehouse> getWarehouses(@RequestParam(value = "page", defaultValue = "0") int page,
                                                     @RequestParam(value = "size", defaultValue = "20") int size) {
@@ -47,17 +55,28 @@ public class WarehouseController {
     }
 
     @Operation(summary = "Get a warehouse by its ID")
-    @ApiResponse(responseCode = "200", description = "Warehouse found")
-    @ApiResponse(responseCode = "404", description = "Warehouse not found")
+    @ApiResponse(responseCode = "200", description = "Warehouse found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Warehouse.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Warehouse not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<Warehouse> getWarehouse(@PathVariable("id") long id) {
-        return ResponseEntity.of(warehouseRepository.findById(id).map(Warehouse::from));
+    public ResponseEntity<?> getWarehouse(@PathVariable("id") long id) {
+        val entity = warehouseRepository.findById(id);
+        if (entity.isEmpty()) {
+            return Errors.WAREHOUSE_NOT_FOUND.asResponse();
+        }
+
+        return ResponseEntity.of(entity.map(Warehouse::from));
     }
 
     @Operation(summary = "Create a new warehouse")
-    @ApiResponse(responseCode = "201", description = "Warehouse created")
+    @ApiResponse(responseCode = "201", description = "Warehouse created", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Warehouse.class))
+    })
     @PostMapping("/")
-    public ResponseEntity<Warehouse> createWarehouse(@RequestBody Warehouse warehouse) {
+    public ResponseEntity<Warehouse> createWarehouse(@Valid @RequestBody Warehouse warehouse) {
         val entity = warehouseRepository.save(warehouse.toEntity());
 
         return ResponseEntity.created(linkTo(methodOn(WarehouseController.class).getWarehouse(entity.getId())).toUri())

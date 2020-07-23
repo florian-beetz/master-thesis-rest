@@ -6,9 +6,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
 import javax.xml.bind.DatatypeConverter;
 
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
+import de.florianbeetz.ma.rest.inventory.api.ApiError;
+import de.florianbeetz.ma.rest.inventory.api.Errors;
 import de.florianbeetz.ma.rest.inventory.data.ItemRepository;
 import de.florianbeetz.ma.rest.inventory.data.ItemStockEntity;
 import de.florianbeetz.ma.rest.inventory.data.ItemStockRepository;
@@ -56,31 +59,39 @@ public class ItemStockController {
     }
 
     @Operation(summary = "List stock of item")
-    @ApiResponse(responseCode = "200", description = "Listing of the stock")
-    @ApiResponse(responseCode = "404", description = "Item does not exist")
+    @ApiResponse(responseCode = "200", description = "Listing of the stock", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Item does not exist", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}/stock/")
-    public ResponseEntity<CollectionModel<ItemStock>> getStockOfItem(@PathVariable("id") long itemId,
-                                                                     @RequestParam(value = "page", defaultValue = "0") int page,
-                                                                     @RequestParam(value = "size", defaultValue = "20") int size) {
+    public ResponseEntity<?> getStockOfItem(@PathVariable("id") long itemId,
+                                            @RequestParam(value = "page", defaultValue = "0") int page,
+                                            @RequestParam(value = "size", defaultValue = "20") int size) {
         val itemEntity = itemRepository.findById(itemId);
         if (itemEntity.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return Errors.ITEM_NOT_FOUND.asResponse();
         }
 
         val itemStockPage = itemStockRepository.findAllByItem(itemEntity.get(), PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "available")));
         val itemStock = itemStockPage.get()
-                .map(ItemStock::from)
-                .collect(Collectors.toList());
+                                     .map(ItemStock::from)
+                                     .collect(Collectors.toList());
 
         return ResponseEntity.ok(PagingUtil.getCollection(itemStock, itemStockPage, page, size, (p, s) -> methodOn(ItemStockController.class).getStockOfItem(itemId, p, s)));
     }
 
     @Operation(summary = "Get stock by its ID")
-    @ApiResponse(responseCode = "200", description = "Stock found")
-    @ApiResponse(responseCode = "404", description = "Stock not found")
+    @ApiResponse(responseCode = "200", description = "Stock found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Stock not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{itemId}/stock/{stockId}")
-    public ResponseEntity<ItemStock> getStock(@PathVariable("itemId") long itemId,
-                                              @PathVariable("stockId") long stockId) {
+    public ResponseEntity<?> getStock(@PathVariable("itemId") long itemId,
+                                      @PathVariable("stockId") long stockId) {
         val stock = itemStockRepository.findById(stockId);
 
         if (stock.isPresent()) {
@@ -88,27 +99,33 @@ public class ItemStockController {
             headers.setETag(calculateEtag(stock.get().toString()));
             return new ResponseEntity<>(ItemStock.from(stock.get()), headers, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return Errors.STOCK_POSITION_NOT_FOUND.asResponse();
         }
     }
 
     @Operation(summary = "Create a new stock position")
-            @ApiResponse(responseCode = "201", description = "Stock position created")
-            @ApiResponse(responseCode = "400", description = "Invalid request (warehouse invalid or available > inStock)")
-            @ApiResponse(responseCode = "404", description = "Item or warehouse does not exist")
+    @ApiResponse(responseCode = "201", description = "Stock position created", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
+    })
+    @ApiResponse(responseCode = "400", description = "Invalid request (warehouse invalid or available > inStock)", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Item or warehouse does not exist", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @PostMapping("/{itemId}/stock/")
-    public ResponseEntity<ItemStock> createStock(@PathVariable("itemId") long itemId,
-                                                 @RequestBody ItemStock stock) {
+    public ResponseEntity<?> createStock(@PathVariable("itemId") long itemId,
+                                         @Valid @RequestBody ItemStock stock) {
         val id = Warehouse.getIdFromUri(stock.getWarehouse());
         if (id == null) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return Errors.WAREHOUSE_URL_INVALID.asResponse();
         }
 
         val warehouseEntity = warehouseRepository.findById(id);
         val itemEntity = itemRepository.findById(itemId);
 
         if (warehouseEntity.isEmpty() || itemEntity.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return Errors.WAREHOUSE_NOT_FOUND.asResponse();
         }
 
         // if stock is created without available items, use the items in stock
@@ -119,48 +136,54 @@ public class ItemStockController {
 
         // if no in stock was passed, or more is available than in stock, that request does not make sense
         if (stock.getInStock() == null || stock.getInStock() < available) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return Errors.STOCK_POSITION_INVALID.asResponse();
         }
 
         ItemStockEntity entity = new ItemStockEntity(null, itemEntity.get(), warehouseEntity.get(), stock.getInStock(), available);
         entity = itemStockRepository.save(entity);
 
         return ResponseEntity.created(linkTo(methodOn(ItemStockController.class).getStock(itemId, entity.getId())).toUri())
-                .body(ItemStock.from(entity));
+                             .body(ItemStock.from(entity));
     }
 
     @Operation(summary = "Update a stock position")
-    @ApiResponse(responseCode = "200", description = "stock position updated",
-            content = {
-                    @Content(mediaType = "application/hal+json",
-                            schema = @Schema(implementation = ItemStock.class))
-            })
-    @ApiResponse(responseCode = "400", description = "invalid request: available > inStock")
-    @ApiResponse(responseCode = "404", description = "item not found")
-    @ApiResponse(responseCode = "428", description = "no ETag provided")
-    @ApiResponse(responseCode = "412", description = "ETag does not match")
+    @ApiResponse(responseCode = "200", description = "stock position updated", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
+    })
+    @ApiResponse(responseCode = "400", description = "invalid request: available > inStock", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "404", description = "item not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "428", description = "no ETag provided", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "412", description = "ETag does not match", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @PutMapping("/{itemId}/stock/{stockId}")
-    public ResponseEntity<ItemStock> updateStock(@RequestBody ItemStock stock,
-                                                 @PathVariable("itemId") long itemId,
-                                                 @PathVariable("stockId") long stockId,
-                                                 @RequestHeader(HttpHeaders.IF_MATCH) String etag) {
+    public ResponseEntity<?> updateStock(@Valid @RequestBody ItemStock stock,
+                                         @PathVariable("itemId") long itemId,
+                                         @PathVariable("stockId") long stockId,
+                                         @RequestHeader(HttpHeaders.IF_MATCH) String etag) {
         if (etag == null) {
-            return new ResponseEntity<>(HttpStatus.PRECONDITION_REQUIRED);
+            return Errors.ETAG_MISSING.asResponse();
         }
 
         val entity = itemStockRepository.findById(stockId);
         if (entity.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return Errors.STOCK_POSITION_NOT_FOUND.asResponse();
         }
 
         var itemStock = entity.get();
 
         if (!etag.equals(calculateEtag(itemStock.toString()))) {
-            return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+            return Errors.ETAG_MISMATCH.asResponse();
         }
 
         if (stock.getAvailable() < 0 || stock.getInStock() < 0 || stock.getAvailable() > stock.getInStock()) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return Errors.STOCK_POSITION_INVALID.asResponse();
         }
 
         itemStock.setInStock(stock.getInStock());
@@ -174,19 +197,21 @@ public class ItemStockController {
     }
 
     @Operation(summary = "Deletes a stock position")
-    @ApiResponse(responseCode = "200", description = "stock position deleted")
-    @ApiResponse(responseCode = "404", description = "stock position not found")
+    @ApiResponse(responseCode = "204", description = "stock position deleted")
+    @ApiResponse(responseCode = "404", description = "stock position not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @DeleteMapping("/{itemId}/stock/{stockId}")
-    public ResponseEntity<Object> deleteStock(@PathVariable("itemId") long itemId,
+    public ResponseEntity<?> deleteStock(@PathVariable("itemId") long itemId,
                                          @PathVariable("stockId") long stockId) {
         val stock = itemStockRepository.findById(stockId);
 
         if (stock.isEmpty()) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return Errors.STOCK_POSITION_NOT_FOUND.asResponse();
         }
 
         itemStockRepository.delete(stock.get());
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @SneakyThrows(NoSuchAlgorithmException.class)

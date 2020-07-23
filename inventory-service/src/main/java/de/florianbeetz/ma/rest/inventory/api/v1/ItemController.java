@@ -2,10 +2,16 @@ package de.florianbeetz.ma.rest.inventory.api.v1;
 
 import java.util.stream.Collectors;
 
+import javax.validation.Valid;
+
 import de.florianbeetz.ma.rest.inventory.PagingUtil;
+import de.florianbeetz.ma.rest.inventory.api.ApiError;
+import de.florianbeetz.ma.rest.inventory.api.Errors;
 import de.florianbeetz.ma.rest.inventory.data.ItemEntity;
 import de.florianbeetz.ma.rest.inventory.data.ItemRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +40,9 @@ public class ItemController {
     }
 
     @Operation(summary = "List all items")
-    @ApiResponse(responseCode = "200", description = "Listing of the items")
+    @ApiResponse(responseCode = "200", description = "Listing of the items", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))
+    })
     @GetMapping(value = "/")
     public CollectionModel<Item> getItems(@RequestParam(value = "page", defaultValue = "0") Integer page,
                                           @RequestParam(value = "size", defaultValue = "20") Integer size) {
@@ -48,17 +56,27 @@ public class ItemController {
     }
 
     @Operation(summary = "Get an item by its id")
-    @ApiResponse(responseCode = "200", description = "Item found")
-    @ApiResponse(responseCode = "404", description = "Item not found")
+    @ApiResponse(responseCode = "200", description = "Item found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Item.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Item not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}")
-    public ResponseEntity<Item> getItem(@PathVariable("id") long id) {
-        return ResponseEntity.of(itemRepository.findById(id).map(Item::from));
+    public ResponseEntity<?> getItem(@PathVariable("id") long id) {
+        val entity = itemRepository.findById(id);
+        if (entity.isEmpty()) {
+            return Errors.ITEM_NOT_FOUND.asResponse();
+        }
+        return ResponseEntity.of(entity.map(Item::from));
     }
 
     @Operation(summary = "Create a new item")
-    @ApiResponse(responseCode = "201", description = "Item created")
+    @ApiResponse(responseCode = "201", description = "Item created", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Item.class))
+    })
     @PostMapping("/")
-    public ResponseEntity<Item> createItem(@RequestBody Item item) {
+    public ResponseEntity<Item> createItem(@Valid @RequestBody Item item) {
         ItemEntity entity = itemRepository.save(item.toEntity());
         return ResponseEntity.created(linkTo(methodOn(ItemController.class).getItem(entity.getId())).toUri())
                 .body(Item.from(entity));
