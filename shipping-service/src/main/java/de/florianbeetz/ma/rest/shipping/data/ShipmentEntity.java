@@ -20,7 +20,7 @@ public class ShipmentEntity {
     private Long id;
 
     @Column(nullable = false)
-    private String order;
+    private String orderUrl;
 
     @Column(nullable = false)
     private String destinationStreet;
@@ -30,5 +30,8 @@ public class ShipmentEntity {
 
     @Column(nullable = false)
     private String destinationZip;
+
+    @Column(nullable = false)
+    private String status;
 
 }
