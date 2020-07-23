@@ -34,6 +34,8 @@ services:
 
   inventory_db:
     image: postgres
+    ports:
+    - 5434:5432
     environment:
       - POSTGRES_PASSWORD=${INVENTORY_DB_PASSWORD}
 
@@ -81,3 +83,26 @@ services:
       - 5433:5432
     environment:
       - POSTGRES_PASSWORD=${SHIPPING_DB_PASSWORD}
+
+  payment:
+    build:
+      ./payment-service
+    environment:
+      - PAYMENT_DB_HOST=payment_db
+      - PAYMENT_DB_PORT=5432
+      - PAYMENT_DB_DATABASE=postgres
+      - PAYMENT_DB_USER=postgres
+      - PAYMENT_DB_PASSWORD=${PAYMENT_DB_PASSWORD}
+    depends_on:
+      - payment_db
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payment.rule=PathPrefix(`/payment/`)"
+      - "traefik.http.routers.payment.entrypoints=web"
+
+  payment_db:
+    image: postgres
+    ports:
+      - 5435:5432
+    environment:
+      - POSTGRES_PASSWORD=${PAYMENT_DB_PASSWORD}

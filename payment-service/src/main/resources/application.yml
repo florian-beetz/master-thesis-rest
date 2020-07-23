@@ -1,0 +1,21 @@
+logging:
+  level:
+    .: INFO
+    de.florianbeetz: DEBUG
+    org.springframework.web.servlet.DispatcherServlet: DEBUG
+
+server:
+  servlet:
+    context-path: /payment
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${PAYMENT_DB_HOST}:${PAYMENT_DB_PORT}/${PAYMENT_DB_DATABASE}
+    username: ${PAYMENT_DB_USER}
+    password: ${PAYMENT_DB_PASSWORD}
+  jpa:
+    generate-ddl: true
+
+springdoc:
+  api-docs:
+    path: /api/docs
