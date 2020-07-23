@@ -1,3 +1,8 @@
+application:
+  title: Shipping API
+  version: 1
+  description: Manages shipments of orders
+
 logging:
   level:
     .: INFO

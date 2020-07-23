@@ -1,3 +1,8 @@
+application:
+  title: Inventory API
+  version: 1
+  description: Manages inventory in warehouses
+
 logging:
   level:
     .: INFO

@@ -1,3 +1,8 @@
+application:
+  title: Payment API
+  version: 1
+  description: Manages payments for orders and provides an interface for external payment processors
+
 logging:
   level:
     .: INFO

@@ -5,6 +5,10 @@ RUN gradle build --no-daemon
 
 FROM openjdk:14-slim
 EXPOSE 8080
+RUN apt-get update && \
+    apt-get -y install curl --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 RUN mkdir /app
+HEALTHCHECK CMD curl http://localhost:8080/shipping/api/status || exit 1
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/shipping-service.jar
 ENTRYPOINT ["java","-jar","/app/shipping-service.jar"]
