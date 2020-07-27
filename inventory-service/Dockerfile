@@ -9,6 +9,6 @@ RUN apt-get update && \
     apt-get -y install curl --no-install-recommends && \
     rm -rf /var/lib/apt/lists/*
 RUN mkdir /app
-HEALTHCHECK CMD curl http://localhost:8080/inventory/api/status || exit 1
+HEALTHCHECK --start-period=10s CMD curl http://localhost:8080/inventory/api/status || exit 1
 COPY --from=build /home/gradle/src/build/libs/*.jar /app/inventory-service.jar
 ENTRYPOINT ["java","-jar","/app/inventory-service.jar"]
