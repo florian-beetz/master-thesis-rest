@@ -15,7 +15,6 @@ import de.florianbeetz.ma.rest.shipping.api.Errors;
 import de.florianbeetz.ma.rest.shipping.data.ShipmentEntity;
 import de.florianbeetz.ma.rest.shipping.data.ShipmentRepository;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.headers.Header;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,7 +23,6 @@ import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -102,7 +100,16 @@ public class ShipmentController {
 
     @GetMapping("/{id}/cost")
     public ResponseEntity<?> getShippingCost(@PathVariable("id") long id) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+        if (!shipmentRepository.existsById(id)) {
+            return Errors.SHIPMENT_NOT_FOUND.asResponse();
+        }
+
+        val cost = new ShipmentCost(shippingCostService.getDefaultShippingCost(), "default");
+        cost.add(linkTo(methodOn(ShipmentController.class).getShippingCost(id)).withSelfRel());
+        cost.add(linkTo(methodOn(ShipmentController.class).getShipment(id)).withRel("shipment"));
+        cost.add(linkTo(methodOn(ShipmentController.class).getShippingStatus(id)).withRel("status"));
+
+        return new ResponseEntity<>(cost, HttpStatus.OK);
     }
 
     @Operation(summary = "Get the status of a shipment by its ID")
