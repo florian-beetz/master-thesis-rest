@@ -98,12 +98,10 @@ public class OrderController {
                 null,
                 OrderStatus.CREATED.name(),
                 null);
-
         val savedOrder = orderRepository.save(entity);
         positions.forEach(pos -> pos.setOrder(entity));
         val savedPositions = orderPositionRepository.saveAll(positions);
         savedOrder.setPositions(StreamSupport.stream(savedPositions.spliterator(), false).collect(Collectors.toList()));
-
         log.debug("Saved order: {}", entity);
 
         // create corresponding shipment

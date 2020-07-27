@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import de.florianbeetz.ma.rest.order.client.UnexpectedApiBehaviourException;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -101,13 +103,17 @@ public class InventoryApi {
             reserveItems = Math.min(body.getAvailable(), amount);
             val updatedStock = new ItemStock(body.getInStock(), body.getAvailable() - reserveItems);
 
-            // update stock position
-            val headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setIfMatch(response.getHeaders().getETag());
-            val putResponse = restTemplate.exchange(selfLink.getHref(), HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), ItemStock.class);
+            try {
+                // update stock position
+                val headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setIfMatch(response.getHeaders().getETag());
+                val putResponse = restTemplate.exchange(selfLink.getHref(), HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), ItemStock.class);
 
-            updateStatus = putResponse.getStatusCode();
+                updateStatus = putResponse.getStatusCode();
+            } catch (HttpClientErrorException e) {
+                updateStatus = e.getStatusCode();
+            }
         } while (updateStatus == HttpStatus.PRECONDITION_FAILED);
 
         // status is not precondition failed
@@ -152,13 +158,17 @@ public class InventoryApi {
             val body = response.getBody();
             val updatedStock = new ItemStock(body.getInStock(), body.getAvailable() + amount);
 
-            // update stock position
-            val headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setIfMatch(response.getHeaders().getETag());
-            val putResponse = restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), ItemStock.class);
+            try {
+                // update stock position
+                val headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setIfMatch(response.getHeaders().getETag());
+                val putResponse = restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), ItemStock.class);
 
-            updateStatus = putResponse.getStatusCode();
+                updateStatus = putResponse.getStatusCode();
+            } catch (HttpClientErrorException e) {
+                updateStatus = e.getStatusCode();
+            }
         } while (updateStatus == HttpStatus.PRECONDITION_FAILED);
 
         log.debug("adding {} to item {} resulted in status {}", amount, url, updateStatus);

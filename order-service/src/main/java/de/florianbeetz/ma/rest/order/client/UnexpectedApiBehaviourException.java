@@ -1,10 +1,10 @@
-package de.florianbeetz.ma.rest.order.client.inventory;
+package de.florianbeetz.ma.rest.order.client;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 /**
- * Signals that the inventory API behaved in some unexpected way.
+ * Signals that the API behaved in some unexpected way.
  */
 @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 public class UnexpectedApiBehaviourException extends RuntimeException {
