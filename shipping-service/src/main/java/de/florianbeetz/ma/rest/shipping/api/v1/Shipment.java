@@ -23,6 +23,8 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 public class Shipment extends RepresentationModel<Shipment> {
 
     public static final LinkRelation ORDER_RELATION = LinkRelation.of("order");
+    public static final LinkRelation STATUS_RELATION = LinkRelation.of("status");
+    public static final LinkRelation COST_RELATION = LinkRelation.of("cost");
 
     @NotNull
     private final Address destinationAddress;
@@ -46,6 +48,8 @@ public class Shipment extends RepresentationModel<Shipment> {
     static Shipment from(ShipmentEntity entity) {
         Shipment shipment = new Shipment(new Address(entity.getDestinationStreet(), entity.getDestinationCity(), entity.getDestinationZip()), null, entity.getStatus());
         shipment.add(linkTo(methodOn(ShipmentController.class).getShipment(entity.getId())).withSelfRel());
+        shipment.add(linkTo(methodOn(ShipmentController.class).getShippingStatus(entity.getId())).withRel(STATUS_RELATION));
+        shipment.add(linkTo(methodOn(ShipmentController.class).getShippingCost(entity.getId())).withRel(COST_RELATION));
         shipment.add(new Link(entity.getOrderUrl(), ORDER_RELATION));
         return shipment;
     }

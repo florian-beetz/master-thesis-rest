@@ -161,7 +161,7 @@ public class ShipmentController {
         }
 
         val entity = shipmentEntity.get();
-        if (etag.equals(calculateShipmentStatusETag(entity))) {
+        if (!etag.equals(calculateShipmentStatusETag(entity))) {
             return Errors.ETAG_MISMATCH.asResponse();
         }
 
