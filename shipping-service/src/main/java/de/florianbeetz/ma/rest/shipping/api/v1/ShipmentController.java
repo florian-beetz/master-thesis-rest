@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.xml.bind.DatatypeConverter;
@@ -93,11 +94,37 @@ public class ShipmentController {
         return ResponseEntity.of(entity.map(Shipment::from));
     }
 
+    @Operation(summary = "Deletes a shipment")
+    @ApiResponse(responseCode = "204", description = "Shipment was deleted")
+    @ApiResponse(responseCode = "403", description = "Shipment can no longer be deleted, as it already shipped", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Shipment not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Shipment> deleteShipment(@PathVariable("id") long id) {
-        return new ResponseEntity<>(HttpStatus.NOT_IMPLEMENTED);
+    public ResponseEntity<?> deleteShipment(@PathVariable("id") long id) {
+        val shipment = shipmentRepository.findById(id);
+        if (shipment.isEmpty()) {
+            return Errors.SHIPMENT_NOT_FOUND.asResponse();
+        }
+
+        val shipmentEntity = shipment.get();
+        if (!ShippingStatus.isValidTransition(ShippingStatus.from(shipmentEntity.getStatus()), ShippingStatus.CANCELLED)) {
+            return Errors.SHIPMENT_TOO_LATE.asResponse();
+        }
+
+        shipmentRepository.delete(shipmentEntity);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @Operation(summary = "Get the cost of shipping")
+    @ApiResponse(responseCode = "200", description = "Shipping cost is returned", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ShipmentCost.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Shipment not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}/cost")
     public ResponseEntity<?> getShippingCost(@PathVariable("id") long id) {
         if (!shipmentRepository.existsById(id)) {
