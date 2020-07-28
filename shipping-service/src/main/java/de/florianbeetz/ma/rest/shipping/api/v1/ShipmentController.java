@@ -91,7 +91,10 @@ public class ShipmentController {
             return Errors.SHIPMENT_NOT_FOUND.asResponse();
         }
 
-        return ResponseEntity.of(entity.map(Shipment::from));
+        val headers = new HttpHeaders();
+        headers.setETag(calculateShipmentEtag(entity.get()));
+
+        return new ResponseEntity<>(Shipment.from(entity.get()), headers, HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes a shipment")
@@ -103,13 +106,22 @@ public class ShipmentController {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
     })
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteShipment(@PathVariable("id") long id) {
+    public ResponseEntity<?> deleteShipment(@PathVariable("id") long id,
+                                            @RequestHeader(HttpHeaders.IF_MATCH) String etag) {
+        if (etag == null) {
+            return Errors.ETAG_MISSING.asResponse();
+        }
+
         val shipment = shipmentRepository.findById(id);
         if (shipment.isEmpty()) {
             return Errors.SHIPMENT_NOT_FOUND.asResponse();
         }
 
         val shipmentEntity = shipment.get();
+        if (!etag.equals(calculateShipmentEtag(shipmentEntity))) {
+            return Errors.ETAG_MISMATCH.asResponse();
+        }
+
         if (!ShippingStatus.isValidTransition(ShippingStatus.from(shipmentEntity.getStatus()), ShippingStatus.CANCELLED)) {
             return Errors.SHIPMENT_TOO_LATE.asResponse();
         }
@@ -206,6 +218,11 @@ public class ShipmentController {
         shipmentRepository.save(entity);
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+
+    private String calculateShipmentEtag(ShipmentEntity entity) {
+        return calculateEtag("Shipment" + entity.getId() + entity.getStatus() + entity.getOrderUrl() +
+                entity.getDestinationCity() + entity.getDestinationStreet() + entity.getDestinationZip());
     }
 
     private static String calculateShipmentStatusETag(final ShipmentEntity entity) {
