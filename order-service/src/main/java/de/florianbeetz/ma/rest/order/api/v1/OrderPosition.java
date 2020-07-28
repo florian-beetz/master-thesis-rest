@@ -9,18 +9,11 @@ import de.florianbeetz.ma.rest.order.data.OrderPositionEntity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import org.springframework.hateoas.LinkRelation;
-import org.springframework.hateoas.RepresentationModel;
-
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
-import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @Getter
 @ToString
 @EqualsAndHashCode(callSuper = false)
-public class OrderPosition extends RepresentationModel<OrderPosition> {
-
-    private static final LinkRelation ORDER_RELATION = LinkRelation.of("order");
+public class OrderPosition {
 
     private final String item;
     private final long amount;
@@ -33,9 +26,7 @@ public class OrderPosition extends RepresentationModel<OrderPosition> {
     }
 
     public static OrderPosition from(OrderPositionEntity entity) {
-        OrderPosition position = new OrderPosition(entity.getItemStock(), entity.getAmount());
-        position.add(linkTo(methodOn(OrderController.class).getOrder(entity.getOrder().getId())).withRel(ORDER_RELATION));
-        return position;
+        return new OrderPosition(entity.getItemStock(), entity.getAmount());
     }
 
     public static List<OrderPosition> from(List<OrderPositionEntity> entities) {

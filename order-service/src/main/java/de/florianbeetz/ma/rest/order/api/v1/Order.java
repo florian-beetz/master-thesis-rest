@@ -5,6 +5,7 @@ import java.util.List;
 import javax.validation.Valid;
 import javax.validation.constraints.NotEmpty;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import de.florianbeetz.ma.rest.order.data.OrderEntity;
@@ -37,6 +38,7 @@ public class Order extends RepresentationModel<Order> {
 
     // TODO: address, payment info
 
+    @JsonCreator
     public Order(@JsonProperty("items") List<OrderPosition> items,
                  @JsonProperty("status") String status,
                  @JsonProperty("address") Address address) {

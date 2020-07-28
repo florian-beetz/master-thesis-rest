@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.hateoas.IanaLinkRelations;
 import org.springframework.hateoas.LinkRelation;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -47,7 +48,6 @@ public class ShippingApi {
 
     public void setShipmentStatus(Shipment shipment, ShippingStatus status) {
         HttpStatus updateStatus;
-        String etag;
         do {
             // request status to get ETag
             val response = restTemplate.getForEntity(shipment.getRequiredLink(STATUS_RELATION).getHref(), String.class);
@@ -66,6 +66,31 @@ public class ShippingApi {
 
         if (updateStatus != HttpStatus.NO_CONTENT) {
             throw new UnexpectedApiBehaviourException("Failed to update shipment status: API responded with with status " + updateStatus);
+        }
+    }
+
+    public void deleteShipment(Shipment shipment) {
+        String shipmentUrl = shipment.getRequiredLink(IanaLinkRelations.SELF).getHref();
+        HttpStatus deleteStatus;
+        do {
+            // request entity to get ETag
+            val response = restTemplate.getForEntity(shipmentUrl, Shipment.class);
+
+            try {
+                // update status
+                val headers = new HttpHeaders();
+                headers.setIfMatch(response.getHeaders().getETag());
+                val deleteResponse = restTemplate.exchange(shipmentUrl, HttpMethod.DELETE, new HttpEntity<>(headers), Object.class);
+
+                deleteStatus = deleteResponse.getStatusCode();
+            } catch (HttpClientErrorException e) {
+                deleteStatus = e.getStatusCode();
+            }
+
+        } while (deleteStatus == HttpStatus.PRECONDITION_FAILED);
+
+        if (deleteStatus != HttpStatus.NO_CONTENT) {
+            throw new UnexpectedApiBehaviourException("Failed to delete shipment: API responded with status " + deleteStatus);
         }
     }
 }

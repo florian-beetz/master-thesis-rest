@@ -8,4 +8,6 @@ public interface OrderRepository extends PagingAndSortingRepository<OrderEntity,
 
     List<OrderEntity> findAllByStatus(String status);
 
+    List<OrderEntity> findAllByStatusAndShipmentUrlNotNull(String status);
+
 }
