@@ -22,7 +22,7 @@ public class HousekeepingService {
         this.paymentRepository = paymentRepository;
     }
 
-    @Scheduled(fixedRate = 60 * 1000)
+    @Scheduled(cron = "${application.housekeeping.order-update}")
     public void updateOrders() {
         log.info("Updating orders...");
 

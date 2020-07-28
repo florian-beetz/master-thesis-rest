@@ -22,7 +22,7 @@ public class HousekeepingService {
         this.orderApi = orderApi;
     }
 
-    @Scheduled(fixedRate = 60 * 1000)
+    @Scheduled(cron = "${application.housekeeping.order-update}")
     public void shipShipments() {
         log.info("Updating ready-to-ship shipments...");
 

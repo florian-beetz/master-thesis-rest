@@ -3,6 +3,9 @@ application:
   version: 1
   description: Manages payments for orders and provides an interface for external payment processors
 
+  housekeeping:
+    order-update: "0 * * * * *" # every minute
+
 logging:
   level:
     .: INFO

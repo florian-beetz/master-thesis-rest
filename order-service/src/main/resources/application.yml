@@ -9,6 +9,10 @@ application:
     payment:
       base-url: http://host.docker.internal:8080/payment/api/v1
 
+  housekeeping:
+    ready-to-ship: "0 * * * * *" # every minute
+    dangling-subresources: "0 * * * * *"
+
 logging:
   level:
     .: INFO

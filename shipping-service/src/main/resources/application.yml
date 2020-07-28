@@ -3,6 +3,9 @@ application:
   version: 1
   description: Manages shipments of orders
 
+  housekeeping:
+    order-update: "0 * * * * *" # every minute
+
 logging:
   level:
     .: INFO

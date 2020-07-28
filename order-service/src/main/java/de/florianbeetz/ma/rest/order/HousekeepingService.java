@@ -25,7 +25,7 @@ public class HousekeepingService {
         this.paymentApi = paymentApi;
     }
 
-    @Scheduled(fixedRate = 60 * 1000)
+    @Scheduled(cron = "${application.housekeeping.ready-to-ship}")
     public void updateReadyToShipShipments() {
         log.info("Updating ready-to-ship shipments...");
 
@@ -49,7 +49,7 @@ public class HousekeepingService {
         log.info("Updated {} shipments.", updated);
     }
 
-    @Scheduled(fixedRate = 60 * 1000)
+    @Scheduled(cron = "${application.housekeeping.dangling-subresources}")
     public void deleteSubResourcesOfCancelledOrders() {
         log.info("Deleting shipments for cancelled orders...");
 
