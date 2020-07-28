@@ -16,6 +16,8 @@ import de.florianbeetz.ma.rest.order.api.ApiError;
 import de.florianbeetz.ma.rest.order.api.Errors;
 import de.florianbeetz.ma.rest.order.client.inventory.InventoryApi;
 import de.florianbeetz.ma.rest.order.client.inventory.Item;
+import de.florianbeetz.ma.rest.order.client.payment.Payment;
+import de.florianbeetz.ma.rest.order.client.payment.PaymentApi;
 import de.florianbeetz.ma.rest.order.client.shipping.Shipment;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingAddress;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
@@ -51,16 +53,18 @@ public class OrderController {
 
     private final InventoryApi inventoryApi;
     private final ShippingApi shippingApi;
+    private final PaymentApi paymentApi;
     private final OrderRepository orderRepository;
     private final OrderPositionRepository orderPositionRepository;
 
     @Autowired
     public OrderController(InventoryApi inventoryApi,
                            ShippingApi shippingApi,
-                           OrderRepository orderRepository,
+                           PaymentApi paymentApi, OrderRepository orderRepository,
                            OrderPositionRepository orderPositionRepository) {
         this.inventoryApi = inventoryApi;
         this.shippingApi = shippingApi;
+        this.paymentApi = paymentApi;
         this.orderRepository = orderRepository;
         this.orderPositionRepository = orderPositionRepository;
     }
@@ -79,6 +83,7 @@ public class OrderController {
 
         // create reservation positions of all items in the order
         List<OrderPositionEntity> positions = new ArrayList<>();
+        double total = 0d;
         for (OrderPosition position : order.getItems()) {
             Item item = inventoryApi.getItem(position.getItem());
             log.debug("reserving {} of item {}", position.getAmount(), item);
@@ -91,13 +96,12 @@ public class OrderController {
             for (String url : reservationPositions.keySet()) {
                 positions.add(new OrderPositionEntity(null, null, url, reservationPositions.get(url)));
             }
+
+            total += item.getPrice() * position.getAmount();
         }
 
         // save order
-        val entity = new OrderEntity(null,
-                null,
-                OrderStatus.CREATED.name(),
-                null);
+        val entity = new OrderEntity();
         val savedOrder = orderRepository.save(entity);
         positions.forEach(pos -> pos.setOrder(entity));
         val savedPositions = orderPositionRepository.saveAll(positions);
@@ -109,8 +113,17 @@ public class OrderController {
                 linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri().toString());
         val createdShipment = shippingApi.createShipment(shipment);
 
+        // get shipment cost
+        val shipmentCost = shippingApi.getShipmentCost(createdShipment);
+        total += shipmentCost.getPrice();
+
+        // create corresponding payment
+        val payment = new Payment(total, linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri().toString());
+        val createdPayment = paymentApi.createPayment(payment);
+
         // update entity with shipment URL
         savedOrder.setShipmentUrl(shippingApi.getShipmentUrl(createdShipment));
+        savedOrder.setPaymentUrl(paymentApi.getPaymentUrl(createdPayment));
         orderRepository.save(savedOrder);
 
         return ResponseEntity.created(linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri())

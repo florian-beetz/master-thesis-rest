@@ -27,6 +27,7 @@ public class Order extends RepresentationModel<Order> {
 
     public static final LinkRelation STATUS_RELATION = LinkRelation.of("status");
     public static final LinkRelation SHIPMENT_RELATION = LinkRelation.of("shipment");
+    public static final LinkRelation PAYMENT_RELATION = LinkRelation.of("payment");
 
     @NotEmpty
     private final List<OrderPosition> items;
@@ -35,8 +36,6 @@ public class Order extends RepresentationModel<Order> {
     @Valid
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Address address;
-
-    // TODO: address, payment info
 
     @JsonCreator
     public Order(@JsonProperty("items") List<OrderPosition> items,
@@ -51,7 +50,12 @@ public class Order extends RepresentationModel<Order> {
         val order = new Order(OrderPosition.from(entity.getPositions()), entity.getStatus(), null);
         order.add(linkTo(methodOn(OrderController.class).getOrder(entity.getId())).withSelfRel());
         order.add(linkTo(methodOn(OrderController.class).getOrderStatus(entity.getId())).withRel(STATUS_RELATION));
-        order.add(new Link(entity.getShipmentUrl(), SHIPMENT_RELATION));
+        if (entity.getShipmentUrl() != null) {
+            order.add(new Link(entity.getShipmentUrl(), SHIPMENT_RELATION));
+        }
+        if (entity.getPaymentUrl() != null) {
+            order.add(new Link(entity.getPaymentUrl(), PAYMENT_RELATION));
+        }
         return order;
     }
 }

@@ -1,5 +1,6 @@
 package de.florianbeetz.ma.rest.order;
 
+import de.florianbeetz.ma.rest.order.client.payment.PaymentApi;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingStatus;
 import de.florianbeetz.ma.rest.order.data.OrderRepository;
@@ -11,15 +12,17 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ShippingService {
+public class HousekeepingService {
 
     private final OrderRepository orderRepository;
     private final ShippingApi shippingApi;
+    private final PaymentApi paymentApi;
 
     @Autowired
-    public ShippingService(OrderRepository orderRepository, ShippingApi shippingApi) {
+    public HousekeepingService(OrderRepository orderRepository, ShippingApi shippingApi, PaymentApi paymentApi) {
         this.orderRepository = orderRepository;
         this.shippingApi = shippingApi;
+        this.paymentApi = paymentApi;
     }
 
     @Scheduled(fixedRate = 60 * 1000)
@@ -47,27 +50,43 @@ public class ShippingService {
     }
 
     @Scheduled(fixedRate = 60 * 1000)
-    public void deleteCancelledShipments() {
+    public void deleteSubResourcesOfCancelledOrders() {
         log.info("Deleting shipments for cancelled orders...");
 
-        int deleted = 0;
-        val orders = orderRepository.findAllByStatusAndShipmentUrlNotNull(OrderStatus.CANCELED.name());
+        int deletedShipments = 0;
+        int deletedPayments = 0;
+        val orders = orderRepository.findAllByStatusAndHasSubResourceUrls(OrderStatus.CANCELED.name());
 
         for (val order : orders) {
-            log.debug("Deleting shipment for order {}", order.getId());
-            try {
-                val shipment = shippingApi.getShipment(order.getShipmentUrl());
+            if (order.getShipmentUrl() != null) {
+                log.debug("Deleting shipment for order {}", order.getId());
+                try {
+                    val shipment = shippingApi.getShipment(order.getShipmentUrl());
 
-                shippingApi.deleteShipment(shipment);
-                order.setShipmentUrl(null);
-                orderRepository.save(order);
-                deleted++;
-            } catch (Exception e) {
-                log.error("Failed to delete shipment for order {}", order.getId(), e);
+                    shippingApi.deleteShipment(shipment);
+                    order.setShipmentUrl(null);
+                    deletedShipments++;
+                } catch (Exception e) {
+                    log.error("Failed to delete shipment for order {}", order.getId(), e);
+                }
             }
+
+            if (order.getPaymentUrl() != null) {
+                log.debug("Deleting payment for order {}", order.getId());
+                try {
+                    val payment = paymentApi.getPayment(order.getPaymentUrl());
+
+                    paymentApi.deletePayment(payment);
+                    order.setPaymentUrl(null);
+                    deletedPayments++;
+                } catch (Exception e) {
+                    log.error("Failed to delete payment for order {}", order.getId(), e);
+                }
+            }
+            orderRepository.save(order);
         }
 
-        log.info("Deleted {} shipments.", deleted);
+        log.info("Deleted {} shipments and {} payments.", deletedShipments, deletedPayments);
     }
 
 }

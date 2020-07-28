@@ -20,6 +20,7 @@ import org.springframework.web.client.RestTemplate;
 public class ShippingApi {
 
     public static final LinkRelation STATUS_RELATION = LinkRelation.of("status");
+    public static final LinkRelation COST_RELATION = LinkRelation.of("cost");
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
@@ -43,6 +44,11 @@ public class ShippingApi {
 
     public Shipment getShipment(String url) {
         val response = restTemplate.getForEntity(url, Shipment.class);
+        return response.getBody();
+    }
+
+    public ShipmentCost getShipmentCost(Shipment shipment) {
+        val response = restTemplate.getForEntity(shipment.getRequiredLink(COST_RELATION).getHref(), ShipmentCost.class);
         return response.getBody();
     }
 

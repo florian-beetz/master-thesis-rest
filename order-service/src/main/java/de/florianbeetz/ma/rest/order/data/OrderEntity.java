@@ -11,13 +11,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
+import de.florianbeetz.ma.rest.order.OrderStatus;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@NoArgsConstructor
 @AllArgsConstructor
 public class OrderEntity {
 
@@ -32,7 +31,9 @@ public class OrderEntity {
     private String status;
 
     private String shipmentUrl;
+    private String paymentUrl;
 
-    // TODO: payment information
-
+    public OrderEntity() {
+        this(null,null, OrderStatus.CREATED.name(), null, null);
+    }
 }
