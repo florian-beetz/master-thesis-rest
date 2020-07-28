@@ -31,6 +31,7 @@ public class PaymentEntity {
     @Column(nullable = false)
     private String status;
 
+    /** indicates if the corresponding order has already been set to status payment_received **/
     @Column(nullable = false)
     private boolean orderUpdated;
 

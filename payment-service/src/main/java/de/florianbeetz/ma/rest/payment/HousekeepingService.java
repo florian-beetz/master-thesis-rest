@@ -34,6 +34,8 @@ public class HousekeepingService {
             try {
                 val order = orderApi.getOrder(payment.getOrderUrl());
                 orderApi.setOrderStatus(order, OrderStatus.PAYMENT_RECEIVED);
+                payment.setOrderUpdated(true);
+                paymentRepository.save(payment);
                 updated++;
             } catch (Exception e) {
                 log.error("Failed to update order for payment {}", payment.getId());
