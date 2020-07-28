@@ -39,6 +39,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/payment")
+@SuppressWarnings("squid:S1452")
 public class PaymentController {
 
     private final PaymentRepository paymentRepository;

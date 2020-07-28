@@ -35,11 +35,11 @@ public class ShippingApi {
         String url = baseUrl + "/shipment/";
         log.debug("Creating shipment using URL '{}'", url);
         val response = restTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(shipment), Shipment.class);
-        return response.getBody(); // TODO: handle errors
+        return response.getBody();
     }
 
     public String getShipmentUrl(Shipment shipment) {
-        return shipment.getRequiredLink("self").getHref(); // TODO: handle errors
+        return shipment.getRequiredLink("self").getHref();
     }
 
     public Shipment getShipment(String url) {

@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service;
 public class ShippingCostService {
 
     public double getDefaultShippingCost() {
-        return 4.59;
+        return 4.59; // NOSONAR
     }
 
 }

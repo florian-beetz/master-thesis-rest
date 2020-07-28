@@ -33,7 +33,7 @@ class PagedIteratorTest {
     private RestTemplate restTemplate;
 
     @Test
-    public void pagedIteratorReturnsItemsOfSinglePage() {
+    void pagedIteratorReturnsItemsOfSinglePage() {
         CollectionModel<String> page = new CollectionModel<>(Collections.singletonList("first"),
                 new Link(PAGE_URL, "first"), new Link(PAGE_URL, "last"));
 
@@ -48,7 +48,7 @@ class PagedIteratorTest {
     }
 
     @Test
-    public void pagedIteratorReturnsItemsOfMultiplePages() {
+    void pagedIteratorReturnsItemsOfMultiplePages() {
         CollectionModel<String> page1 = new CollectionModel<>(Collections.singletonList("first"),
                 new Link(PAGE_URL, "first"), new Link(PAGE_URL + "?page=1", "next"), new Link(PAGE_URL + "?page=1", "last"));
         CollectionModel<String> page2 = new CollectionModel<>(Collections.singletonList("second"),
@@ -69,7 +69,7 @@ class PagedIteratorTest {
     }
 
     @Test
-    public void emptyPagedIteratorHasNoElements() {
+    void emptyPagedIteratorHasNoElements() {
         CollectionModel<String> page = new CollectionModel<>(Collections.emptyList(),
                 new Link(PAGE_URL, "first"), new Link(PAGE_URL, "last"));
 
@@ -83,7 +83,7 @@ class PagedIteratorTest {
     }
 
     @Test
-    public void pagedIteratorThrowsNoSuchElementExceptionWhenMovedToEnd() {
+    void pagedIteratorThrowsNoSuchElementExceptionWhenMovedToEnd() {
         CollectionModel<String> page = new CollectionModel<>(Collections.singletonList("first"),
                 new Link(PAGE_URL, "first"), new Link(PAGE_URL, "last"));
 

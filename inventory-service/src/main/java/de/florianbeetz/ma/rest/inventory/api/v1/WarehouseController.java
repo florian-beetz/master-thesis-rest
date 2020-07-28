@@ -30,6 +30,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/warehouse")
+@SuppressWarnings("squid:S1452")
 public class WarehouseController {
 
     private final WarehouseRepository warehouseRepository;

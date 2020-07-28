@@ -6,6 +6,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+/**
+ * Represents the address a {@link Order} should be shipped to.
+ */
 @Data
 public class Address {
 
@@ -17,6 +20,7 @@ public class Address {
     private final String zip;
 
     @JsonCreator
+    @SuppressWarnings("squid:S1176")
     public Address(@JsonProperty("street") String street,
                    @JsonProperty("city") String city,
                    @JsonProperty("zip") String zip) {

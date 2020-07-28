@@ -26,8 +26,6 @@ public class Order extends RepresentationModel<Order> {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Address address;
 
-    // TODO: address, payment info
-
     @JsonCreator
     public Order(@JsonProperty("items") List<OrderPosition> items,
                  @JsonProperty("status") String status,

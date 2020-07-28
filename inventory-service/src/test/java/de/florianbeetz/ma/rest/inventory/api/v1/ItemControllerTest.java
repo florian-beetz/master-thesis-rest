@@ -29,7 +29,7 @@ class ItemControllerTest {
     private ItemRepository itemRepository;
 
     @Test
-    public void findAllItemsShouldReturnAllItems() throws Exception {
+    void findAllItemsShouldReturnAllItems() throws Exception {
         itemRepository.save(new ItemEntity(null, "Item 1", null, 3.99));
         itemRepository.save(new ItemEntity(null, "Item 2", null, 5));
 
@@ -44,7 +44,7 @@ class ItemControllerTest {
     }
 
     @Test
-    public void nonExistentItemReturns404() throws Exception {
+    void nonExistentItemReturns404() throws Exception {
         mockMvc.perform(get("/api/v1/item/1"))
                .andExpect(status().isNotFound());
     }

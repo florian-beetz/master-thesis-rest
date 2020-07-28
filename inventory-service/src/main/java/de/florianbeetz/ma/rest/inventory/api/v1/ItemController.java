@@ -31,6 +31,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/v1/item")
+@SuppressWarnings("squid:S1452")
 public class ItemController {
 
     private final ItemRepository itemRepository;

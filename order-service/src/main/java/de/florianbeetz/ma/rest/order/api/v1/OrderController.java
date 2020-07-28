@@ -51,6 +51,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/order")
+@SuppressWarnings("squid:S1452")
 public class OrderController {
 
     private final InventoryApi inventoryApi;
