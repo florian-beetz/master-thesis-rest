@@ -92,7 +92,7 @@ public class PaymentController {
 
         val headers = new HttpHeaders();
         headers.setETag(calculatePaymentEtag(entity.get()));
-        return new ResponseEntity<>(entity.get(), headers, HttpStatus.OK);
+        return new ResponseEntity<>(Payment.from(entity.get()), headers, HttpStatus.OK);
     }
 
     @Operation(summary = "Deletes a payment by its ID")
