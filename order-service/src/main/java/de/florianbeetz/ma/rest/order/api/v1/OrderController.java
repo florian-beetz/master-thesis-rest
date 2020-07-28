@@ -26,6 +26,8 @@ import de.florianbeetz.ma.rest.order.data.OrderPositionEntity;
 import de.florianbeetz.ma.rest.order.data.OrderPositionRepository;
 import de.florianbeetz.ma.rest.order.data.OrderRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -70,9 +72,15 @@ public class OrderController {
     }
 
     @Operation(summary = "Creates a new order")
-    @ApiResponse(responseCode = "201", description = "Order was created")
-    @ApiResponse(responseCode = "400", description = "Status is not created")
-    @ApiResponse(responseCode = "422", description = "Order can not be satisfied because not enough items are in stock")
+    @ApiResponse(responseCode = "201", description = "Order was created", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Order.class))
+    })
+    @ApiResponse(responseCode = "400", description = "Status is not created", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "422", description = "Order can not be satisfied because not enough items are in stock", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @PostMapping("/")
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
         // order must be in CREATED state when newly created
@@ -131,8 +139,12 @@ public class OrderController {
     }
 
     @Operation(summary = "Get an Order by its ID")
-    @ApiResponse(responseCode = "200", description = "Order found")
-    @ApiResponse(responseCode = "404", description = "Order not found")
+    @ApiResponse(responseCode = "200", description = "Order found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Order.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Order not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}")
     public ResponseEntity<?> getOrder(@PathVariable("id") long id) {
         val entity = orderRepository.findById(id);
@@ -143,8 +155,12 @@ public class OrderController {
     }
 
     @Operation(summary = "Gets the status of an Order by its ID")
-    @ApiResponse(responseCode = "200", description = "Status of the order could be returned")
-    @ApiResponse(responseCode = "404", description = "Order not found")
+    @ApiResponse(responseCode = "200", description = "Status of the order could be returned", content = {
+            @Content(mediaType = "text/plain", schema = @Schema(implementation = OrderStatus.class))
+    })
+    @ApiResponse(responseCode = "404", description = "Order not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @GetMapping("/{id}/status")
     public ResponseEntity<?> getOrderStatus(@PathVariable("id") long id) {
         val entity = orderRepository.findById(id);
@@ -159,12 +175,21 @@ public class OrderController {
         return new ResponseEntity<>(orderEntity.getStatus(), headers, HttpStatus.OK);
     }
 
-    @Operation(summary = "Update the status of an order identified by its ID")
+    @Operation(summary = "Update the status of an order identified by its ID",
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = OrderStatus.class))))
     @ApiResponse(responseCode = "204", description = "Status of the order was updated")
-    @ApiResponse(responseCode = "404", description = "Order not found")
-    @ApiResponse(responseCode = "400", description = "Status of the order can not be updated to this status")
-    @ApiResponse(responseCode = "428", description = "no ETag provided")
-    @ApiResponse(responseCode = "412", description = "ETag does not match")
+    @ApiResponse(responseCode = "404", description = "Order not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "400", description = "Status of the order can not be updated to this status", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "428", description = "no ETag provided", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "412", description = "ETag does not match", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
     @PutMapping("/{id}/status")
     public ResponseEntity<?> updateOrderStatus(@PathVariable("id") long id,
                                                @RequestBody String status,
