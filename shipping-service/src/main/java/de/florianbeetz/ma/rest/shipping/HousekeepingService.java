@@ -1,6 +1,5 @@
 package de.florianbeetz.ma.rest.shipping;
 
-import de.florianbeetz.ma.rest.shipping.client.order.Order;
 import de.florianbeetz.ma.rest.shipping.client.order.OrderApi;
 import de.florianbeetz.ma.rest.shipping.client.order.OrderStatus;
 import de.florianbeetz.ma.rest.shipping.data.ShipmentRepository;
@@ -12,13 +11,13 @@ import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
-public class ShippingService {
+public class HousekeepingService {
 
     private final ShipmentRepository shipmentRepository;
     private final OrderApi orderApi;
 
     @Autowired
-    public ShippingService(ShipmentRepository shipmentRepository, OrderApi orderApi) {
+    public HousekeepingService(ShipmentRepository shipmentRepository, OrderApi orderApi) {
         this.shipmentRepository = shipmentRepository;
         this.orderApi = orderApi;
     }

@@ -4,7 +4,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Optional;
 
 import javax.validation.Valid;
 import javax.xml.bind.DatatypeConverter;
@@ -103,6 +102,12 @@ public class ShipmentController {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
     })
     @ApiResponse(responseCode = "404", description = "Shipment not found", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "412", description = "ETag does not match", content = {
+            @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
+    })
+    @ApiResponse(responseCode = "428", description = "no ETag provided", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
     })
     @DeleteMapping("/{id}")
