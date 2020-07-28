@@ -38,6 +38,11 @@ services:
     - 5434:5432
     environment:
       - POSTGRES_PASSWORD=${INVENTORY_DB_PASSWORD}
+    healthcheck: &pg_health
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   orders:
     build: ./order-service
@@ -60,6 +65,7 @@ services:
     - 5432:5432
     environment:
       - POSTGRES_PASSWORD=${ORDER_DB_PASSWORD}
+    healthcheck: *pg_health
 
   shipping:
     build:
@@ -83,6 +89,7 @@ services:
       - 5433:5432
     environment:
       - POSTGRES_PASSWORD=${SHIPPING_DB_PASSWORD}
+    healthcheck: *pg_health
 
   payment:
     build:
@@ -106,3 +113,4 @@ services:
       - 5435:5432
     environment:
       - POSTGRES_PASSWORD=${PAYMENT_DB_PASSWORD}
+    healthcheck: *pg_health
