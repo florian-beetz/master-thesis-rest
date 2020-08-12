@@ -1,5 +1,9 @@
 package de.florianbeetz.ma.rest.shipping;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import de.florianbeetz.ma.rest.shipping.client.inventory.InventoryApi;
 import de.florianbeetz.ma.rest.shipping.client.order.OrderApi;
 import de.florianbeetz.ma.rest.shipping.client.order.OrderStatus;
 import de.florianbeetz.ma.rest.shipping.data.ShipmentRepository;
@@ -15,11 +19,13 @@ public class HousekeepingService {
 
     private final ShipmentRepository shipmentRepository;
     private final OrderApi orderApi;
+    private final InventoryApi inventoryApi;
 
     @Autowired
-    public HousekeepingService(ShipmentRepository shipmentRepository, OrderApi orderApi) {
+    public HousekeepingService(ShipmentRepository shipmentRepository, OrderApi orderApi, InventoryApi inventoryApi) {
         this.shipmentRepository = shipmentRepository;
         this.orderApi = orderApi;
+        this.inventoryApi = inventoryApi;
     }
 
     @Scheduled(cron = "${application.housekeeping.order-update}")
@@ -36,6 +42,10 @@ public class HousekeepingService {
             try {
                 val order = orderApi.getOrder(shipment.getOrderUrl());
                 orderApi.setOrderStatus(order, OrderStatus.SHIPPED);
+
+                Map<String, Long> positions = new HashMap<>();
+                order.getItems().forEach(i -> positions.put(i.getItem(), i.getAmount()));
+                inventoryApi.bookOutStock(positions);
 
                 shipmentRepository.save(shipment);
                 updated++;
