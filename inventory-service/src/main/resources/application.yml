@@ -8,10 +8,21 @@ logging:
     .: INFO
     de.florianbeetz: DEBUG
     org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.security: DEBUG
 
 server:
   servlet:
     context-path: /inventory
+
+keycloak:
+  realm: ma-rest-shop
+  auth-server-url: ${INVENTORY_AUTH_URL:http://localhost/auth}
+  ssl-required: none
+  resource: shop
+  credentials:
+    secret: "123456"
+  use-resource-role-mappings: true
+  bearer-only: true
 
 spring:
   datasource:

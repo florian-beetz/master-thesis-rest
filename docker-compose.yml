@@ -1,5 +1,8 @@
 version: '3'
 
+volumes:
+  keycloak_db:
+
 services:
   traefik:
     image: traefik
@@ -15,15 +18,29 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:11.0.0
+    environment:
+    - KEYCLOAK_USER=${KEYCLOAK_USER}
+    - KEYCLOAK_PASSWORD=${KEYCLOAK_PASSWORD}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gateway.rule=PathPrefix(`/auth/`, `/auth`)"
+      - "traefik.http.routers.gateway.entrypoints=web"
+    volumes:
+      - keycloak_db:/opt/jboss/keyclaok/standalone/data
 
   inventory:
     build: ./inventory-service
+    ports:
+    - 9010:9010
     environment:
       - INVENTORY_DB_HOST=inventory_db
       - INVENTORY_DB_PORT=5432
       - INVENTORY_DB_DATABASE=postgres
       - INVENTORY_DB_USER=postgres
       - INVENTORY_DB_PASSWORD=${INVENTORY_DB_PASSWORD}
+      - INVENTORY_AUTH_URL=http://host.docker.internal:8080/auth
     depends_on:
       - inventory_db
     labels:
@@ -46,6 +63,8 @@ services:
 
   orders:
     build: ./order-service
+    ports:
+        - 1098:1099
     environment:
       - ORDER_DB_HOST=order_db
       - ORDER_DB_PORT=5432
@@ -70,6 +89,8 @@ services:
   shipping:
     build:
       ./shipping-service
+    ports:
+        - 1097:1099
     environment:
       - SHIPPING_DB_HOST=shipping_db
       - SHIPPING_DB_PORT=5432
@@ -94,6 +115,8 @@ services:
   payment:
     build:
       ./payment-service
+    ports:
+        - 1096:1099
     environment:
       - PAYMENT_DB_HOST=payment_db
       - PAYMENT_DB_PORT=5432

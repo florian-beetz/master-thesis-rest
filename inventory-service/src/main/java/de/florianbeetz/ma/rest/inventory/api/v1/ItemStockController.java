@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -104,7 +106,8 @@ public class ItemStockController {
         }
     }
 
-    @Operation(summary = "Create a new stock position")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "Create a new stock position", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "201", description = "Stock position created", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
     })
@@ -147,7 +150,8 @@ public class ItemStockController {
                              .body(ItemStock.from(entity));
     }
 
-    @Operation(summary = "Update a stock position")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "Update a stock position", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "200", description = "stock position updated", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
     })
@@ -197,7 +201,8 @@ public class ItemStockController {
         return new ResponseEntity<>(ItemStock.from(itemStock), headers, HttpStatus.OK);
     }
 
-    @Operation(summary = "Deletes a stock position")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "Deletes a stock position", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "stock position deleted")
     @ApiResponse(responseCode = "404", description = "stock position not found", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
