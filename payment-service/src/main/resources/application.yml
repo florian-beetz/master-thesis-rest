@@ -11,10 +11,21 @@ logging:
     .: INFO
     de.florianbeetz: DEBUG
     org.springframework.web.servlet.DispatcherServlet: DEBUG
+    org.springframework.security: DEBUG
 
 server:
   servlet:
     context-path: /payment
+
+keycloak:
+  realm: ma-rest-shop
+  auth-server-url: ${PAYMENT_AUTH_URL:http://localhost/auth} # default value required for testing
+  ssl-required: none
+  resource: ${PAYMENT_AUTH_CLIENT}
+  credentials:
+    secret: ${PAYMENT_AUTH_SECRET}
+  use-resource-role-mappings: true
+  bearer-only: true
 
 spring:
   datasource:

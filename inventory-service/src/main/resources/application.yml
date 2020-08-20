@@ -16,11 +16,11 @@ server:
 
 keycloak:
   realm: ma-rest-shop
-  auth-server-url: ${INVENTORY_AUTH_URL:http://localhost/auth}
+  auth-server-url: ${INVENTORY_AUTH_URL:http://localhost/auth} # default value required for testing
   ssl-required: none
-  resource: shop
+  resource: ${INVENTORY_AUTH_CLIENT}
   credentials:
-    secret: "123456"
+    secret: ${INVENTORY_AUTH_SECRET}
   use-resource-role-mappings: true
   bearer-only: true
 

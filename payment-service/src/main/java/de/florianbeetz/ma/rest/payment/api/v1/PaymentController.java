@@ -18,12 +18,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,7 +51,8 @@ public class PaymentController {
         this.paymentRepository = paymentRepository;
     }
 
-    @Operation(summary = "Creates a new payment")
+    @Secured("ROLE_payment_admin")
+    @Operation(summary = "Creates a new payment", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "201", description = "Payment created", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Payment.class))
     })
@@ -96,7 +99,8 @@ public class PaymentController {
         return new ResponseEntity<>(Payment.from(entity.get()), headers, HttpStatus.OK);
     }
 
-    @Operation(summary = "Deletes a payment by its ID")
+    @Secured("ROLE_payment_admin")
+    @Operation(summary = "Deletes a payment by its ID", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "Payment deleted")
     @ApiResponse(responseCode = "403", description = "Payment can no longer be deleted, as it already payed", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
@@ -155,8 +159,10 @@ public class PaymentController {
         return new ResponseEntity<>(Payment.from(paymentEntity).getStatus(), headers, HttpStatus.OK);
     }
 
+    @Secured("ROLE_payment_admin")
     @Operation(summary = "Updates the status of a payment by its ID",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = PaymentStatus.class))))
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = PaymentStatus.class))),
+            security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "Status of the shipment was updated")
     @ApiResponse(responseCode = "400", description = "Status of the shipment can not be updated to this status", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))

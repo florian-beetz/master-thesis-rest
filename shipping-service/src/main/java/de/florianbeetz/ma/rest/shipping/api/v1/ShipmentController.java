@@ -18,12 +18,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.SneakyThrows;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,7 +53,8 @@ public class ShipmentController {
         this.shipmentRepository = shipmentRepository;
     }
 
-    @Operation(description = "Creates a new shipment")
+    @Secured("ROLE_shipping_admin")
+    @Operation(description = "Creates a new shipment", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "201", description = "Shipment was created", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Shipment.class))
     })
@@ -97,7 +100,8 @@ public class ShipmentController {
         return new ResponseEntity<>(Shipment.from(entity.get()), headers, HttpStatus.OK);
     }
 
-    @Operation(summary = "Deletes a shipment")
+    @Secured("ROLE_shipping_admin")
+    @Operation(summary = "Deletes a shipment", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "Shipment was deleted")
     @ApiResponse(responseCode = "403", description = "Shipment can no longer be deleted, as it already shipped", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
@@ -177,8 +181,10 @@ public class ShipmentController {
         return new ResponseEntity<>(Shipment.from(shipmentEntity).getStatus(), headers, HttpStatus.OK);
     }
 
+    @Secured("ROLE_shipping_admin")
     @Operation(summary = "Update the status of a shipment identified by its ID",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = ShippingStatus.class))))
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = ShippingStatus.class))),
+            security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "Status of the shipment was updated")
     @ApiResponse(responseCode = "400", description = "Status of the shipment can not be updated to this status", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))

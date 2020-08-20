@@ -40,7 +40,9 @@ services:
       - INVENTORY_DB_DATABASE=postgres
       - INVENTORY_DB_USER=postgres
       - INVENTORY_DB_PASSWORD=${INVENTORY_DB_PASSWORD}
-      - INVENTORY_AUTH_URL=http://host.docker.internal:8080/auth
+      - INVENTORY_AUTH_URL=${ROOT_URL}/auth
+      - INVENTORY_AUTH_CLIENT=${INVENTORY_CLIENT_ID}
+      - INVENTORY_AUTH_SECRET=${INVENTORY_CLIENT_SECRET}
     depends_on:
       - inventory_db
     labels:
@@ -63,14 +65,15 @@ services:
 
   orders:
     build: ./order-service
-    ports:
-        - 1098:1099
     environment:
       - ORDER_DB_HOST=order_db
       - ORDER_DB_PORT=5432
       - ORDER_DB_DATABASE=postgres
       - ORDER_DB_USER=postgres
       - ORDER_DB_PASSWORD=${ORDER_DB_PASSWORD}
+      - ORDER_AUTH_URL=${ROOT_URL}/auth
+      - ORDER_AUTH_CLIENT=${ORDER_CLIENT_ID}
+      - ORDER_AUTH_SECRET=${ORDER_CLIENT_SECRET}
     depends_on:
       - order_db
     labels:
@@ -89,14 +92,15 @@ services:
   shipping:
     build:
       ./shipping-service
-    ports:
-        - 1097:1099
     environment:
       - SHIPPING_DB_HOST=shipping_db
       - SHIPPING_DB_PORT=5432
       - SHIPPING_DB_DATABASE=postgres
       - SHIPPING_DB_USER=postgres
       - SHIPPING_DB_PASSWORD=${SHIPPING_DB_PASSWORD}
+      - SHIPPING_AUTH_URL=${ROOT_URL}/auth
+      - SHIPPING_AUTH_CLIENT=${SHIPPING_CLIENT_ID}
+      - SHIPPING_AUTH_SECRET=${SHIPPING_CLIENT_SECRET}
     depends_on:
       - shipping_db
     labels:
@@ -115,14 +119,15 @@ services:
   payment:
     build:
       ./payment-service
-    ports:
-        - 1096:1099
     environment:
       - PAYMENT_DB_HOST=payment_db
       - PAYMENT_DB_PORT=5432
       - PAYMENT_DB_DATABASE=postgres
       - PAYMENT_DB_USER=postgres
       - PAYMENT_DB_PASSWORD=${PAYMENT_DB_PASSWORD}
+      - PAYMENT_AUTH_URL=${ROOT_URL}/auth
+      - PAYMENT_AUTH_CLIENT=${PAYMENT_CLIENT_ID}
+      - PAYMENT_AUTH_SECRET=${PAYMENT_CLIENT_SECRET}
     depends_on:
       - payment_db
     labels:

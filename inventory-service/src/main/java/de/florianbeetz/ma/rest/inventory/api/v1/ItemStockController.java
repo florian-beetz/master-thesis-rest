@@ -61,7 +61,8 @@ public class ItemStockController {
         this.warehouseRepository = warehouseRepository;
     }
 
-    @Operation(summary = "List stock of item")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "List stock of item", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "200", description = "Listing of the stock", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))
     })
@@ -85,7 +86,8 @@ public class ItemStockController {
         return ResponseEntity.ok(PagingUtil.getCollection(itemStock, itemStockPage, page, size, (p, s) -> methodOn(ItemStockController.class).getStockOfItem(itemId, p, s)));
     }
 
-    @Operation(summary = "Get stock by its ID")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "Get stock by its ID", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "200", description = "Stock found", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ItemStock.class))
     })

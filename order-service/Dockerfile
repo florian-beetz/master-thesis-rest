@@ -1,9 +1,9 @@
-FROM gradle:jdk14 AS build
+FROM gradle:jdk13 AS build
 COPY --chown=gradle:gradle . /home/gradle/src
 WORKDIR /home/gradle/src
 RUN gradle build --no-daemon
 
-FROM openjdk:14-slim
+FROM openjdk:13-slim
 EXPOSE 8080
 RUN apt-get update && \
     apt-get -y install curl --no-install-recommends && \

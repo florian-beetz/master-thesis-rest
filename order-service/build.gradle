@@ -7,8 +7,8 @@ plugins {
 group 'de.florianbeetz.ma.rest.order'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 14
-targetCompatibility = 14
+sourceCompatibility = 13
+targetCompatibility = 13
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -21,6 +21,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-hateoas'
     implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.security.oauth:spring-security-oauth2:2.2.1.RELEASE'
+    implementation 'org.keycloak:keycloak-spring-boot-starter:11.0.0'
     implementation 'org.springdoc:springdoc-openapi-ui:1.4.1'
     compileOnly 'org.projectlombok:lombok'
     runtimeOnly 'org.postgresql:postgresql'

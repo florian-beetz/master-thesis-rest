@@ -41,7 +41,8 @@ public class WarehouseController {
         this.warehouseRepository = warehouseRepository;
     }
 
-    @Operation(summary = "List all warehouses")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "List all warehouses", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "200", description = "Listing of the warehouses", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = CollectionModel.class))
     })
@@ -57,7 +58,8 @@ public class WarehouseController {
         return PagingUtil.getCollection(warehouses, warehousePage, page, size, (p, s) -> methodOn(WarehouseController.class).getWarehouses(p, s));
     }
 
-    @Operation(summary = "Get a warehouse by its ID")
+    @Secured("ROLE_inventory_admin")
+    @Operation(summary = "Get a warehouse by its ID", security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "200", description = "Warehouse found", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = Warehouse.class))
     })

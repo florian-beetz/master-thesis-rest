@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -36,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -176,8 +178,10 @@ public class OrderController {
         return new ResponseEntity<>(orderEntity.getStatus(), headers, HttpStatus.OK);
     }
 
+    @Secured("ROLE_order_admin")
     @Operation(summary = "Update the status of an order identified by its ID",
-            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = OrderStatus.class))))
+            requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(schema = @Schema(implementation = OrderStatus.class))),
+            security = @SecurityRequirement(name = "keycloak"))
     @ApiResponse(responseCode = "204", description = "Status of the order was updated")
     @ApiResponse(responseCode = "404", description = "Order not found", content = {
             @Content(mediaType = "application/hal+json", schema = @Schema(implementation = ApiError.class))
