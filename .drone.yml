@@ -1,0 +1,53 @@
+kind: pipeline
+name: default
+type: docker
+
+steps:
+  - name: "inventory: build image"
+    image: plugins/docker
+    settings:
+      username: drone
+      password:
+        from_secret: registry_password
+      repo: registry.florianbeetz.de/ma-rest/inventory
+      auto_tag: true
+      registry: registry.florianbeetz.de
+      context: inventory-service
+      dockerfile: inventory-service/Dockerfile
+
+  - name: "order: build image"
+    image: plugins/docker
+    settings:
+      username: drone
+      password:
+        from_secret: registry_password
+      repo: registry.florianbeetz.de/ma-rest/order
+      auto_tag: true
+      registry: registry.florianbeetz.de
+      context: order-service
+      dockerfile: order-service/Dockerfile
+
+  - name: "payment: build image"
+    image: plugins/docker
+    settings:
+      username: drone
+      password:
+        from_secret: registry_password
+      repo: registry.florianbeetz.de/ma-rest/payment
+      auto_tag: true
+      registry: registry.florianbeetz.de
+      context: payment-service
+      dockerfile: payment-service/Dockerfile
+
+
+  - name: "shipping: build image"
+    image: plugins/docker
+    settings:
+      username: drone
+      password:
+        from_secret: registry_password
+      repo: registry.florianbeetz.de/ma-rest/shipping
+      auto_tag: true
+      registry: registry.florianbeetz.de
+      context: shipping-service
+      dockerfile: shipping-service/Dockerfile
