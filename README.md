@@ -1,4 +1,6 @@
-# Master Thesis Case Study -- REST Microservice
+# Master Thesis Case Study - REST Microservice
+
+[![Build Status](https://drone.florianbeetz.de/api/badges/Uni/master-thesis-rest/status.svg)](https://drone.florianbeetz.de/Uni/master-thesis-rest)
 
 This repository contains a small sample project I am developing as a part of my
 [Master Thesis](https://cloud.florianbeetz.de/s/6pbS45PAQxt7ep4/download).
