@@ -2,52 +2,62 @@ kind: pipeline
 name: default
 type: docker
 
-steps:
-  - name: "inventory: build image"
+globals:
+  - &docker_commons
     image: plugins/docker
     settings:
       username: drone
       password:
         from_secret: registry_password
-      repo: registry.florianbeetz.de/ma-rest/inventory
       auto_tag: true
       registry: registry.florianbeetz.de
+      use_cache: true
+    volumes:
+      - name: docker
+        path: /var/lib/docker
+
+steps:
+  - name: prepare
+    image: busybox
+    commands:
+      - mkdir -p /cache/${DRONE_REPO}/docker
+    volumes:
+      - name: cache
+        path: /cache
+
+  - name: "inventory: build image"
+    <<: *docker_commons
+    settings:
+      repo: registry.florianbeetz.de/ma-rest/inventory
       context: inventory-service
       dockerfile: inventory-service/Dockerfile
 
   - name: "order: build image"
-    image: plugins/docker
+    <<: *docker_commons
     settings:
-      username: drone
-      password:
-        from_secret: registry_password
       repo: registry.florianbeetz.de/ma-rest/order
-      auto_tag: true
-      registry: registry.florianbeetz.de
       context: order-service
       dockerfile: order-service/Dockerfile
 
   - name: "payment: build image"
-    image: plugins/docker
+    <<: *docker_commons
     settings:
-      username: drone
-      password:
-        from_secret: registry_password
       repo: registry.florianbeetz.de/ma-rest/payment
-      auto_tag: true
-      registry: registry.florianbeetz.de
       context: payment-service
       dockerfile: payment-service/Dockerfile
 
 
   - name: "shipping: build image"
-    image: plugins/docker
+    <<: *docker_commons
     settings:
-      username: drone
-      password:
-        from_secret: registry_password
       repo: registry.florianbeetz.de/ma-rest/shipping
-      auto_tag: true
-      registry: registry.florianbeetz.de
       context: shipping-service
       dockerfile: shipping-service/Dockerfile
+
+volumes:
+  - name: cache
+    host:
+      path: /var/cache
+  - name: docker
+    host:
+      path: /var/cache/${DRONE_REPO}/docker
