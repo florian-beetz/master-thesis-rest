@@ -14,6 +14,7 @@ application:
     dangling-subresources: "0 * * * * *" # every minute
     payment-create: "0 * * * * *" # every minute
     shipment-create: "0 * * * * *" # every minute
+    inventory-update: "0 * * * * *" # every minute
 
 logging:
   level:

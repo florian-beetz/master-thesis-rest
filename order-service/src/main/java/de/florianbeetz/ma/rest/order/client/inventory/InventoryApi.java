@@ -14,6 +14,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -138,7 +139,31 @@ public class InventoryApi {
                 if (error == null) {
                     error = new StringBuilder("Failed to reverse reservation [");
                 }
-                error.append(String.format("%s -> %d", entry.getKey(), entry.getValue()));
+                error.append(entry.getKey()).append(" -> ").append(entry.getValue());
+            }
+        }
+
+        if (error != null) {
+            error.append("]");
+            throw new UnexpectedApiBehaviourException(error.toString());
+        }
+    }
+
+    /**
+     * Books out item positions of previously made reservations.
+     *
+     * @param positions a mapping from the URL of a position to the amount of items to book out.
+     */
+    public void bookOutItems(Map<String, Long> positions) {
+        StringBuilder error = null;
+        for (val entry : positions.entrySet()) {
+            val result = bookOutItem(entry.getKey(), entry.getValue());
+
+            if (!result) {
+                if (error == null) {
+                    error = new StringBuilder("Failed to book out items [");
+                }
+                error.append(entry.getKey()).append(" -> ").append(entry.getValue());
             }
         }
 
@@ -158,17 +183,7 @@ public class InventoryApi {
             val body = response.getBody();
             val updatedStock = new ItemStock(body.getInStock(), body.getAvailable() + amount);
 
-            try {
-                // update stock position
-                val headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setIfMatch(response.getHeaders().getETag());
-                val putResponse = restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), ItemStock.class);
-
-                updateStatus = putResponse.getStatusCode();
-            } catch (HttpClientErrorException e) {
-                updateStatus = e.getStatusCode();
-            }
+            updateStatus = sendPutRequest(url, response, updatedStock, ItemStock.class);
         } while (updateStatus == HttpStatus.PRECONDITION_FAILED);
 
         log.debug("adding {} to item {} resulted in status {}", amount, url, updateStatus);
@@ -177,5 +192,42 @@ public class InventoryApi {
         }
 
         return updateStatus == HttpStatus.OK;
+    }
+
+    private boolean bookOutItem(String url, long amount) {
+        HttpStatus updateStatus;
+        do {
+            // request ItemStock on its own to get ETag
+            val response = restTemplate.exchange(url, HttpMethod.GET, null, ItemStock.class);
+
+            // calculate new amount in stock
+            val body = response.getBody();
+            val updatedStock = new ItemStock(body.getInStock() - amount, body.getAvailable());
+
+            updateStatus = sendPutRequest(url, response, updatedStock, ItemStock.class);
+        } while (updateStatus == HttpStatus.PRECONDITION_FAILED);
+
+        log.debug("booking out {} of item {} resulted in status {}", amount, url, updateStatus);
+        if (updateStatus != HttpStatus.OK) {
+            log.error("Failed to book out {} items of stock position {}: response code was {}", amount, url, updateStatus);
+        }
+
+        return updateStatus == HttpStatus.OK;
+    }
+
+    private <T> HttpStatus sendPutRequest(String url, ResponseEntity<T> response, T updatedStock, Class<T> type) {
+        HttpStatus updateStatus;
+        try {
+            // update stock position
+            val headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setIfMatch(response.getHeaders().getETag());
+            val putResponse = restTemplate.exchange(url, HttpMethod.PUT, new HttpEntity<>(updatedStock, headers), type);
+
+            updateStatus = putResponse.getStatusCode();
+        } catch (HttpClientErrorException e) {
+            updateStatus = e.getStatusCode();
+        }
+        return updateStatus;
     }
 }

@@ -1,5 +1,7 @@
 package de.florianbeetz.ma.rest.order;
 
+import java.util.stream.Collectors;
+
 import de.florianbeetz.ma.rest.order.api.v1.OrderController;
 import de.florianbeetz.ma.rest.order.client.inventory.InventoryApi;
 import de.florianbeetz.ma.rest.order.client.payment.Payment;
@@ -9,6 +11,7 @@ import de.florianbeetz.ma.rest.order.client.shipping.ShipmentCost;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingAddress;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingStatus;
+import de.florianbeetz.ma.rest.order.data.OrderPositionEntity;
 import de.florianbeetz.ma.rest.order.data.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
@@ -148,6 +151,48 @@ public class HousekeepingService {
         }
 
         log.info("Deleted {} shipments and {} payments.", deletedShipments, deletedPayments);
+    }
+
+
+    @Scheduled(cron = "${application.housekeeping.inventory-update}")
+    public void updateInventory() {
+        log.info("Updating inventory for shipped and cancelled orders...");
+        int updatedShipped = 0;
+        int updatedCancelled = 0;
+
+        val shippedOrders = orderRepository.findAllByStatusAndItemsBookedOutIsFalse(OrderStatus.SHIPPED.name());
+        for (val order : shippedOrders) {
+            log.debug("Booking out items of order {}", order.getId());
+            try {
+                val positions = order.getPositions().stream()
+                                                   .collect(Collectors.toMap(OrderPositionEntity::getItemStock, OrderPositionEntity::getAmount));
+                inventoryApi.bookOutItems(positions);
+
+                order.setItemsBookedOut(true);
+                orderRepository.save(order);
+                updatedShipped++;
+            } catch (Exception e) {
+                log.error("Failed to book out items of order {}", order.getId(), e);
+            }
+        }
+
+        val cancelledOrders = orderRepository.findAllByStatusAndItemsBookedOutIsFalse(OrderStatus.CANCELED.name());
+        for (val order : cancelledOrders) {
+            log.debug("Cancelling reservations for order {}", order.getId());
+            try {
+                val positions = order.getPositions().stream()
+                        .collect(Collectors.toMap(OrderPositionEntity::getItemStock, OrderPositionEntity::getAmount));
+                inventoryApi.rollbackReservation(positions);
+
+                order.setItemsBookedOut(true);
+                orderRepository.save(order);
+                updatedCancelled++;
+            } catch (Exception e) {
+                log.error("Failed to roll back reservations of order {}", order.getId(), e);
+            }
+        }
+
+        log.info("Booked out items of {} orders and cancelled reservations for {} orders.", updatedShipped, updatedCancelled);
     }
 
 }

@@ -37,9 +37,12 @@ public class OrderEntity {
     private String deliveryCity;
     private String deliveryZip;
 
+    @Column(nullable = false)
+    private boolean itemsBookedOut;
+
     public OrderEntity() {}
 
     public OrderEntity(String deliveryStreet, String deliveryCity, String deliveryZip) {
-        this(null, new ArrayList<>(), OrderStatus.CREATED.name(), null, null, deliveryStreet, deliveryCity, deliveryZip);
+        this(null, new ArrayList<>(), OrderStatus.CREATED.name(), null, null, deliveryStreet, deliveryCity, deliveryZip, false);
     }
 }

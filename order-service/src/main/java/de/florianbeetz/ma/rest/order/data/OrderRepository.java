@@ -18,4 +18,6 @@ public interface OrderRepository extends PagingAndSortingRepository<OrderEntity,
     @Query("select entity from OrderEntity entity where entity.status=:status and entity.shipmentUrl is not null and entity.paymentUrl is null")
     List<OrderEntity> findAllByStatusWithShipmentUrlAndWithoutPaymentUrl(String status);
 
+    List<OrderEntity> findAllByStatusAndItemsBookedOutIsFalse(String status);
+
 }
