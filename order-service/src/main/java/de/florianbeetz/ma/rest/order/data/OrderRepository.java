@@ -12,4 +12,10 @@ public interface OrderRepository extends PagingAndSortingRepository<OrderEntity,
     @Query("select entity from OrderEntity entity where entity.status=:status and (entity.shipmentUrl is not null or entity.paymentUrl is not null)")
     List<OrderEntity> findAllByStatusAndHasSubResourceUrls(String status);
 
+    @Query("select entity from OrderEntity entity where entity.status=:status and entity.shipmentUrl is null")
+    List<OrderEntity> findAllByStatusWithoutShipmentUrl(String status);
+
+    @Query("select entity from OrderEntity entity where entity.status=:status and entity.shipmentUrl is not null and entity.paymentUrl is null")
+    List<OrderEntity> findAllByStatusWithShipmentUrlAndWithoutPaymentUrl(String status);
+
 }

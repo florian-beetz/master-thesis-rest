@@ -11,7 +11,9 @@ application:
 
   housekeeping:
     ready-to-ship: "0 * * * * *" # every minute
-    dangling-subresources: "0 * * * * *"
+    dangling-subresources: "0 * * * * *" # every minute
+    payment-create: "0 * * * * *" # every minute
+    shipment-create: "0 * * * * *" # every minute
 
 logging:
   level:

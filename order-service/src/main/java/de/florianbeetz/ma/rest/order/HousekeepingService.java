@@ -1,6 +1,12 @@
 package de.florianbeetz.ma.rest.order;
 
+import de.florianbeetz.ma.rest.order.api.v1.OrderController;
+import de.florianbeetz.ma.rest.order.client.inventory.InventoryApi;
+import de.florianbeetz.ma.rest.order.client.payment.Payment;
 import de.florianbeetz.ma.rest.order.client.payment.PaymentApi;
+import de.florianbeetz.ma.rest.order.client.shipping.Shipment;
+import de.florianbeetz.ma.rest.order.client.shipping.ShipmentCost;
+import de.florianbeetz.ma.rest.order.client.shipping.ShippingAddress;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingStatus;
 import de.florianbeetz.ma.rest.order.data.OrderRepository;
@@ -10,6 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 @Slf4j
 @Service
 public class HousekeepingService {
@@ -17,12 +26,64 @@ public class HousekeepingService {
     private final OrderRepository orderRepository;
     private final ShippingApi shippingApi;
     private final PaymentApi paymentApi;
+    private final InventoryApi inventoryApi;
 
     @Autowired
-    public HousekeepingService(OrderRepository orderRepository, ShippingApi shippingApi, PaymentApi paymentApi) {
+    public HousekeepingService(OrderRepository orderRepository, ShippingApi shippingApi, PaymentApi paymentApi, InventoryApi inventoryApi) {
         this.orderRepository = orderRepository;
         this.shippingApi = shippingApi;
         this.paymentApi = paymentApi;
+        this.inventoryApi = inventoryApi;
+    }
+
+    @Scheduled(cron = "${application.housekeeping.payment-create}")
+    public void createPayments() {
+        log.info("Creating payments for orders...");
+        int created = 0;
+
+        val orders = orderRepository.findAllByStatusWithShipmentUrlAndWithoutPaymentUrl(OrderStatus.CREATED.name());
+        for (val order : orders) {
+            try {
+                double total = 0;
+                for (val position : order.getPositions()) {
+                    total += position.getAmount() * position.getItemPrice();
+                }
+
+                ShipmentCost shipmentCost = shippingApi.getShipmentCost(order.getShipmentUrl());
+
+                total += shipmentCost.getPrice();
+
+                Payment payment = new Payment(total, linkTo(methodOn(OrderController.class).getOrder(order.getId())).toString());
+                val createdPayment = paymentApi.createPayment(payment);
+
+                order.setPaymentUrl(paymentApi.getPaymentUrl(createdPayment));
+                orderRepository.save(order);
+                created++;
+            } catch (Exception e) {
+                log.error("Failed to create payment for order id={}", order.getId(), e);
+            }
+        }
+
+        log.info("Created {} payments.", created);
+    }
+
+    @Scheduled(cron = "${application.housekeeping.shipment-create}")
+    public void createShipment() {
+        log.info("Creating shipments for orders...");
+        int created = 0;
+
+        val orders = orderRepository.findAllByStatusWithoutShipmentUrl(OrderStatus.CREATED.name());
+        for (val order : orders) {
+            val shipment = new Shipment(new ShippingAddress(order.getDeliveryStreet(), order.getDeliveryCity(), order.getDeliveryZip()),
+                    linkTo(methodOn(OrderController.class).getOrder(order.getId())).toUri().toString());
+            val createdShipment = shippingApi.createShipment(shipment);
+
+            order.setShipmentUrl(shippingApi.getShipmentUrl(createdShipment));
+            orderRepository.save(order);
+            created++;
+        }
+
+        log.info("Created {} shipments.", created);
     }
 
     @Scheduled(cron = "${application.housekeeping.ready-to-ship}")

@@ -33,7 +33,13 @@ public class OrderEntity {
     private String shipmentUrl;
     private String paymentUrl;
 
-    public OrderEntity() {
-        this(null,null, OrderStatus.CREATED.name(), null, null);
+    private String deliveryStreet;
+    private String deliveryCity;
+    private String deliveryZip;
+
+    public OrderEntity() {}
+
+    public OrderEntity(String deliveryStreet, String deliveryCity, String deliveryZip) {
+        this(null, new ArrayList<>(), OrderStatus.CREATED.name(), null, null, deliveryStreet, deliveryCity, deliveryZip);
     }
 }

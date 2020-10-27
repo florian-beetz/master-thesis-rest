@@ -16,10 +16,7 @@ import de.florianbeetz.ma.rest.order.api.ApiError;
 import de.florianbeetz.ma.rest.order.api.Errors;
 import de.florianbeetz.ma.rest.order.client.inventory.InventoryApi;
 import de.florianbeetz.ma.rest.order.client.inventory.Item;
-import de.florianbeetz.ma.rest.order.client.payment.Payment;
 import de.florianbeetz.ma.rest.order.client.payment.PaymentApi;
-import de.florianbeetz.ma.rest.order.client.shipping.Shipment;
-import de.florianbeetz.ma.rest.order.client.shipping.ShippingAddress;
 import de.florianbeetz.ma.rest.order.client.shipping.ShippingApi;
 import de.florianbeetz.ma.rest.order.data.OrderEntity;
 import de.florianbeetz.ma.rest.order.data.OrderPositionEntity;
@@ -94,7 +91,6 @@ public class OrderController {
 
         // create reservation positions of all items in the order
         List<OrderPositionEntity> positions = new ArrayList<>();
-        double total = 0d;
         for (OrderPosition position : order.getItems()) {
             Item item = inventoryApi.getItem(position.getItem());
             log.debug("reserving {} of item {}", position.getAmount(), item);
@@ -105,37 +101,17 @@ public class OrderController {
             }
 
             for (String url : reservationPositions.keySet()) {
-                positions.add(new OrderPositionEntity(null, null, url, reservationPositions.get(url)));
+                positions.add(new OrderPositionEntity(null, null, url, reservationPositions.get(url), item.getPrice()));
             }
-
-            total += item.getPrice() * position.getAmount();
         }
 
         // save order
-        val entity = new OrderEntity();
+        val entity = new OrderEntity(order.getAddress().getStreet(), order.getAddress().getCity(), order.getAddress().getZip());
         val savedOrder = orderRepository.save(entity);
         positions.forEach(pos -> pos.setOrder(entity));
         val savedPositions = orderPositionRepository.saveAll(positions);
         savedOrder.setPositions(StreamSupport.stream(savedPositions.spliterator(), false).collect(Collectors.toList()));
         log.debug("Saved order: {}", entity);
-
-        // create corresponding shipment
-        val shipment = new Shipment(new ShippingAddress(order.getAddress().getStreet(), order.getAddress().getCity(), order.getAddress().getZip()),
-                linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri().toString());
-        val createdShipment = shippingApi.createShipment(shipment);
-
-        // get shipment cost
-        val shipmentCost = shippingApi.getShipmentCost(createdShipment);
-        total += shipmentCost.getPrice();
-
-        // create corresponding payment
-        val payment = new Payment(total, linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri().toString());
-        val createdPayment = paymentApi.createPayment(payment);
-
-        // update entity with shipment URL
-        savedOrder.setShipmentUrl(shippingApi.getShipmentUrl(createdShipment));
-        savedOrder.setPaymentUrl(paymentApi.getPaymentUrl(createdPayment));
-        orderRepository.save(savedOrder);
 
         return ResponseEntity.created(linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri())
                              .body(Order.from(savedOrder));

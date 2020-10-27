@@ -48,7 +48,11 @@ public class ShippingApi {
     }
 
     public ShipmentCost getShipmentCost(Shipment shipment) {
-        val response = restTemplate.getForEntity(shipment.getRequiredLink(COST_RELATION).getHref(), ShipmentCost.class);
+        return getShipmentCost(shipment.getRequiredLink(COST_RELATION).getHref());
+    }
+
+    public ShipmentCost getShipmentCost(String shipmentUrl) {
+        val response = restTemplate.getForEntity(shipmentUrl, ShipmentCost.class);
         return response.getBody();
     }
 

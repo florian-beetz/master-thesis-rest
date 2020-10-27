@@ -30,4 +30,7 @@ public class OrderPositionEntity {
 
     @Column(nullable = false)
     private long amount;
+
+    @Column(nullable = false)
+    private double itemPrice;
 }
