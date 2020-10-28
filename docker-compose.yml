@@ -2,6 +2,9 @@ version: '3'
 
 volumes:
   keycloak_db:
+  influxdb-storage:
+  chronograf-storage:
+  grafana-storage:
 
 services:
   traefik:
@@ -12,6 +15,14 @@ services:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--metrics=true"
+      - "--metrics.influxdb=true"
+      - "--metrics.influxdb.address=influxdb:8086"
+      - "--metrics.influxdb.protocol=http"
+      - "--metrics.influxdb.username=${MONITORING_USERNAME}"
+      - "--metrics.influxdb.password=${MONITORING_PASSWORD}"
+      - "--metrics.influxdb.database=db0"
+
     ports:
       - "8080:80"
       - "8090:8080"
@@ -142,3 +153,42 @@ services:
     environment:
       - POSTGRES_PASSWORD=${PAYMENT_DB_PASSWORD}
     healthcheck: *pg_health
+
+  influxdb:
+    image: influxdb:latest
+    ports:
+      - 8086:8086
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+    environment:
+      - INFLUXDB_DB=db0
+      - INFLUXDB_ADMIN_USER=${MONITORING_USERNAME}
+      - INFLUXDB_ADMIN_PASSWORD=${MONITORING_PASSWORD}
+  chronograf:
+    image: chronograf:latest
+    ports:
+      - '127.0.0.1:8888:8888'
+    volumes:
+      - chronograf-storage:/var/lib/chronograf
+    depends_on:
+      - influxdb
+    environment:
+      - INFLUXDB_URL=http://influxdb:8086
+      - INFLUXDB_USERNAME=${MONITORING_USERNAME}
+      - INFLUXDB_PASSWORD=${MONITORING_PASSWORD}
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+    - 3000:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - influxdb
+    environment:
+      - GF_SECURITY_ADMIN_USER=${MONITORING_USERNAME}
+      - GF_SECURITY_ADMIN_PASSWORD=${MONITORING_PASSWORD}
+  telegraf:
+    image: telegraf:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./docker/telegraf.conf:/etc/telegraf/telegraf.conf:ro
