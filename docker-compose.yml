@@ -43,6 +43,7 @@ services:
 
   inventory:
     build: ./inventory-service
+    image: registry.florianbeetz.de/ma-rest/inventory
     ports:
     - 9010:9010
     environment:
@@ -68,6 +69,7 @@ services:
     - 5434:5432
     environment:
       - POSTGRES_PASSWORD=${INVENTORY_DB_PASSWORD}
+      - "PGOPTIONS=-c track_io_timing=on"
     healthcheck: &pg_health
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -76,6 +78,7 @@ services:
 
   orders:
     build: ./order-service
+    image: registry.florianbeetz.de/ma-rest/order
     environment:
       - ORDER_DB_HOST=order_db
       - ORDER_DB_PORT=5432
@@ -98,11 +101,13 @@ services:
     - 5432:5432
     environment:
       - POSTGRES_PASSWORD=${ORDER_DB_PASSWORD}
+      - "PGOPTIONS=-c track_io_timing=on"
     healthcheck: *pg_health
 
   shipping:
     build:
       ./shipping-service
+    image: registry.florianbeetz.de/ma-rest/shipping
     environment:
       - SHIPPING_DB_HOST=shipping_db
       - SHIPPING_DB_PORT=5432
@@ -125,11 +130,13 @@ services:
       - 5433:5432
     environment:
       - POSTGRES_PASSWORD=${SHIPPING_DB_PASSWORD}
+      - "PGOPTIONS=-c track_io_timing=on"
     healthcheck: *pg_health
 
   payment:
     build:
       ./payment-service
+    image: registry.florianbeetz.de/ma-rest/payment
     environment:
       - PAYMENT_DB_HOST=payment_db
       - PAYMENT_DB_PORT=5432
@@ -152,6 +159,7 @@ services:
       - 5435:5432
     environment:
       - POSTGRES_PASSWORD=${PAYMENT_DB_PASSWORD}
+      - "PGOPTIONS=-c track_io_timing=on"
     healthcheck: *pg_health
 
   influxdb:
