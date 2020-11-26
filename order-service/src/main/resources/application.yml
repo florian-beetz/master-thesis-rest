@@ -4,6 +4,8 @@ application:
   description: Accepts and manages orders
 
   api:
+    order:
+      base-url: http://host.docker.internal:8080/order
     shipping:
       base-url: http://host.docker.internal:8080/shipping/api/v1
     payment:

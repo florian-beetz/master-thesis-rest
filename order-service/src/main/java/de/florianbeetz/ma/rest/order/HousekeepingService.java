@@ -16,6 +16,7 @@ import de.florianbeetz.ma.rest.order.data.OrderRepository;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +31,9 @@ public class HousekeepingService {
     private final ShippingApi shippingApi;
     private final PaymentApi paymentApi;
     private final InventoryApi inventoryApi;
+
+    @Value("${application.api.order.base-url}")
+    private String rootUrl;
 
     @Autowired
     public HousekeepingService(OrderRepository orderRepository, ShippingApi shippingApi, PaymentApi paymentApi, InventoryApi inventoryApi) {
@@ -56,7 +60,7 @@ public class HousekeepingService {
 
                 total += shipmentCost.getPrice();
 
-                Payment payment = new Payment(total, linkTo(methodOn(OrderController.class).getOrder(order.getId())).toString());
+                Payment payment = new Payment(total, getOrderUrl(order.getId()));
                 val createdPayment = paymentApi.createPayment(payment);
 
                 order.setPaymentUrl(paymentApi.getPaymentUrl(createdPayment));
@@ -78,7 +82,7 @@ public class HousekeepingService {
         val orders = orderRepository.findAllByStatusWithoutShipmentUrl(OrderStatus.CREATED.name());
         for (val order : orders) {
             val shipment = new Shipment(new ShippingAddress(order.getDeliveryStreet(), order.getDeliveryCity(), order.getDeliveryZip()),
-                    linkTo(methodOn(OrderController.class).getOrder(order.getId())).toUri().toString());
+                    getOrderUrl(order.getId()));
             val createdShipment = shippingApi.createShipment(shipment);
 
             order.setShipmentUrl(shippingApi.getShipmentUrl(createdShipment));
@@ -193,6 +197,10 @@ public class HousekeepingService {
         }
 
         log.info("Booked out items of {} orders and cancelled reservations for {} orders.", updatedShipped, updatedCancelled);
+    }
+
+    private String getOrderUrl(long id) {
+        return this.rootUrl + linkTo(methodOn(OrderController.class).getOrder(id)).toString();
     }
 
 }
