@@ -8,7 +8,7 @@
 POST http://host.docker.internal:8080/auth/realms/ma-rest-shop/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password&client_id=external&client_secret=161f9398-7e03-4492-a5d9-2b4f1b4b96c7&username=someone&password=password
+grant_type=password&client_id=external&client_secret=84e9fbd1-24fb-46d8-a398-3c4a4f7e9c0e&username=admin&password=admin
 
 ###
 
