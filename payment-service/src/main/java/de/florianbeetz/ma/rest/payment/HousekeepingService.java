@@ -38,7 +38,7 @@ public class HousekeepingService {
                 paymentRepository.save(payment);
                 updated++;
             } catch (Exception e) {
-                log.error("Failed to update order for payment {}", payment.getId());
+                log.error("Failed to update order for payment {}", payment.getId(), e);
             }
         }
 
