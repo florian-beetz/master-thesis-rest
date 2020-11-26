@@ -8,7 +8,7 @@
 POST http://host.docker.internal:8080/auth/realms/ma-rest-shop/protocol/openid-connect/token
 Content-Type: application/x-www-form-urlencoded
 
-grant_type=password&client_id=external&client_secret=ac36f046-59b2-4073-acb9-36c91c6bff29&username=admin&password=admin
+grant_type=password&client_id=external&client_secret=161f9398-7e03-4492-a5d9-2b4f1b4b96c7&username=someone&password=password
 
 ###
 
@@ -44,14 +44,14 @@ Content-Type: application/json
 authorization: bearer {{token}}
 
 {
-  "title": "Döner",
-  "price": 3.5
+  "title": "Dönerbox",
+  "price": 5
 }
 
 ###
 
 # curl -X POST "http://host.docker.internal:8080/inventory/api/v1/item/4/stock/" -H "accept: application/hal+json" -H "Content-Type: application/json" -d "{\"available\":20,\"inStock\":20,\"warehouse\":\"http://host.docker.internal:8080/inventory/api/v1/warehouse/1\"}"
-POST http://host.docker.internal:8080/inventory/api/v1/item/5/stock/
+POST http://host.docker.internal:8080/inventory/api/v1/item/4/stock/
 accept: application/hal+json
 Content-Type: application/json
 authorization: bearer {{token}}
@@ -59,7 +59,7 @@ authorization: bearer {{token}}
 {
   "available": 20,
   "inStock": 20,
-  "warehouse": "http://host.docker.internal:8080/inventory/api/v1/warehouse/4"
+  "warehouse": "http://host.docker.internal:8080/inventory/api/v1/warehouse/1"
 }
 
 ###
@@ -72,7 +72,11 @@ Content-Type: application/json
 {
   "items": [
     {
-      "item": "http://host.docker.internal:8080/inventory/api/v1/item/5",
+      "item": "http://host.docker.internal:8080/inventory/api/v1/item/2",
+      "amount": 2
+    },
+    {
+      "item": "http://host.docker.internal:8080/inventory/api/v1/item/4",
       "amount": 1
     }
   ],
@@ -83,3 +87,8 @@ Content-Type: application/json
     "zip": "96052"
   }
 }
+
+###
+
+GET http://host.docker.internal:8080/order/api/v1/order/1
+accept: application/hal+json

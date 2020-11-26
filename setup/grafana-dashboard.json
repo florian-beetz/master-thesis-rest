@@ -37,6 +37,7 @@
         "defaults": {
           "custom": {},
           "mappings": [],
+          "noValue": "0%",
           "thresholds": {
             "mode": "percentage",
             "steps": [
