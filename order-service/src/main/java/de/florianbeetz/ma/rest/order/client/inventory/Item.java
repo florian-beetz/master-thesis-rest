@@ -14,12 +14,15 @@ public class Item extends RepresentationModel<Item> {
     private final String title;
     private final String description;
     private final double price;
+    private final double weight;
 
     public Item(@JsonProperty(value = "title", required = true) String title,
                 @JsonProperty("description") String description,
-                @JsonProperty(value = "price", required = true) double price) {
+                @JsonProperty(value = "price", required = true) double price,
+                @JsonProperty(value = "weight", required = true) double weight) {
         this.title = title;
         this.description = description;
         this.price = price;
+        this.weight = weight;
     }
 }

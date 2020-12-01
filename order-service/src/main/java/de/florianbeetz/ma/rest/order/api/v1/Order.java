@@ -11,6 +11,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import de.florianbeetz.ma.rest.order.data.OrderEntity;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 import lombok.val;
 import org.springframework.hateoas.Link;
@@ -36,6 +37,9 @@ public class Order extends RepresentationModel<Order> {
     @Valid
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Address address;
+    @Setter
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Double weight;
 
     @JsonCreator
     public Order(@JsonProperty("items") List<OrderPosition> items,
@@ -45,6 +49,7 @@ public class Order extends RepresentationModel<Order> {
         this.status = status;
         this.address = address;
     }
+
 
     public static Order from(OrderEntity entity) {
         val order = new Order(OrderPosition.from(entity.getPositions()), entity.getStatus(), null);

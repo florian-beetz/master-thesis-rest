@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -91,6 +92,7 @@ public class OrderController {
 
         // create reservation positions of all items in the order
         List<OrderPositionEntity> positions = new ArrayList<>();
+        double weight = 0;
         for (OrderPosition position : order.getItems()) {
             Item item = inventoryApi.getItem(position.getItem());
             log.debug("reserving {} of item {}", position.getAmount(), item);
@@ -101,8 +103,9 @@ public class OrderController {
             }
 
             for (String url : reservationPositions.keySet()) {
-                positions.add(new OrderPositionEntity(null, null, url, reservationPositions.get(url), item.getPrice()));
+                positions.add(new OrderPositionEntity(null, null, url, reservationPositions.get(url), item.getPrice(), item.getWeight()));
             }
+            weight += item.getWeight() * position.getAmount();
         }
 
         // save order
@@ -113,8 +116,10 @@ public class OrderController {
         savedOrder.setPositions(StreamSupport.stream(savedPositions.spliterator(), false).collect(Collectors.toList()));
         log.debug("Saved order: {}", entity);
 
+        Order response = Order.from(savedOrder);
+        response.setWeight(weight);
         return ResponseEntity.created(linkTo(methodOn(OrderController.class).getOrder(savedOrder.getId())).toUri())
-                             .body(Order.from(savedOrder));
+                             .body(response);
     }
 
     @Operation(summary = "Get an Order by its ID")
@@ -130,7 +135,10 @@ public class OrderController {
         if (entity.isEmpty()) {
             return Errors.ORDER_NOT_FOUND.asResponse();
         }
-        return ResponseEntity.of(entity.map(Order::from));
+        double weight = orderPositionRepository.getOrderWight(entity.get());
+        Optional<Order> order = entity.map(Order::from);
+        order.ifPresent(o -> o.setWeight(weight));
+        return ResponseEntity.of(order);
     }
 
     @Operation(summary = "Gets the status of an Order by its ID")
