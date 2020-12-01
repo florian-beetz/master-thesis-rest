@@ -33,8 +33,8 @@ class ItemControllerTest {
 
     @Test
     void findAllItemsShouldReturnAllItems() throws Exception {
-        itemRepository.save(new ItemEntity(null, "Item 1", null, 3.99));
-        itemRepository.save(new ItemEntity(null, "Item 2", null, 5));
+        itemRepository.save(new ItemEntity(null, "Item 1", null, 3.99, 0.25));
+        itemRepository.save(new ItemEntity(null, "Item 2", null, 5, 0.1));
 
         mockMvc.perform(get("/api/v1/item/"))
                .andExpect(status().isOk())

@@ -27,4 +27,7 @@ public class ItemEntity {
     @Column(nullable = false)
     private double price;
 
+    @Column(nullable = false)
+    private double weight;
+
 }

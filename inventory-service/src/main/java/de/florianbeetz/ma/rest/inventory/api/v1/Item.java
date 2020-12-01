@@ -30,24 +30,28 @@ public class Item extends RepresentationModel<Item> {
     private final String description;
     @Positive
     private final double price;
+    @PositiveOrZero
+    private final double weight;
 
     @JsonCreator
     public Item(@JsonProperty("title") String title,
                 @JsonProperty("description") String description,
-                @JsonProperty("price") double price) {
+                @JsonProperty("price") double price,
+                @JsonProperty("weight") double weight) {
         this.title = title;
         this.description = description;
         this.price = price;
+        this.weight = weight;
     }
 
     public static Item from(ItemEntity entity) {
-        Item item = new Item(entity.getTitle(), entity.getDescription(), entity.getPrice());
+        Item item = new Item(entity.getTitle(), entity.getDescription(), entity.getPrice(), entity.getWeight());
         item.add(linkTo(methodOn(ItemController.class).getItem(entity.getId())).withSelfRel());
         item.add(linkTo(methodOn(ItemStockController.class).getStockOfItem(entity.getId(), 0, 20)).withRel(STOCK_RELATION));
         return item;
     }
 
     public ItemEntity toEntity() {
-        return new ItemEntity(null, title, description, price);
+        return new ItemEntity(null, title, description, price, weight);
     }
 }
