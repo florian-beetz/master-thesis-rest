@@ -149,11 +149,14 @@ public class ShipmentController {
     })
     @GetMapping("/{id}/cost")
     public ResponseEntity<?> getShippingCost(@PathVariable("id") long id) {
-        if (!shipmentRepository.existsById(id)) {
+        val shipment = shipmentRepository.findById(id);
+        if (shipment.isEmpty()) {
             return Errors.SHIPMENT_NOT_FOUND.asResponse();
         }
 
-        val cost = new ShipmentCost(shippingCostService.getDefaultShippingCost(), "default");
+        val price = shippingCostService.getShippingCost(shipment.get().getOrderUrl());
+
+        val cost = new ShipmentCost(price, "default");
         cost.add(linkTo(methodOn(ShipmentController.class).getShippingCost(id)).withSelfRel());
         cost.add(linkTo(methodOn(ShipmentController.class).getShipment(id)).withRel("shipment"));
         cost.add(linkTo(methodOn(ShipmentController.class).getShippingStatus(id)).withRel("status"));

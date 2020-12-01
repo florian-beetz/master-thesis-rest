@@ -25,14 +25,17 @@ public class Order extends RepresentationModel<Order> {
     @Valid
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private final Address address;
+    private final Double weight;
 
     @JsonCreator
     public Order(@JsonProperty("items") List<OrderPosition> items,
                  @JsonProperty("status") String status,
-                 @JsonProperty("address") Address address) {
+                 @JsonProperty("address") Address address,
+                 @JsonProperty("weight") Double weight) {
         this.items = items;
         this.status = status;
         this.address = address;
+        this.weight = weight;
     }
 
 }
