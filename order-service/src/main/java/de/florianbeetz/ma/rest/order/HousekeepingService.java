@@ -56,7 +56,7 @@ public class HousekeepingService {
                     total += position.getAmount() * position.getItemPrice();
                 }
 
-                Shipment shipment = shippingApi.getShipment(order.getShipmentUrl())
+                Shipment shipment = shippingApi.getShipment(order.getShipmentUrl());
                 ShipmentCost shipmentCost = shippingApi.getShipmentCost(shipment);
 
                 total += shipmentCost.getPrice();
