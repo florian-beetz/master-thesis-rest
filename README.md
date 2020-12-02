@@ -15,90 +15,44 @@ This example project models a small online shop.
 The architecture consists of four microservices, responsible for processing orders, managing inventory, processing
 payments, and shipping.
 
-## Building
+## Building and Running the Project
 
-Just use `docker-compose up -d` and the project works out of the box.
+The easiest way to build and run the project is with a Docker installation available.
 
-If you want to build the services stand-alone, navigate to the directory of the microservice (e.g. `inventory-service`)
-and execute `gradlew build`.
-This will generate an executable fat-jar in `build/libs`.
+1. Create the file `.env` in the root directory of the project. 
+   Use `.env.template` to see an example of the contents.
+   You can leave the `*_CLIENT_SECRET` keys out for now.
+2. Run `docker-compose up -d` to start up the project.
+   If the images are already available locally, add the `--build` flag to force rebuilding the images.
+3. Wait until the service `keycloak` is available (you can check availability at [the Traefik Dashboard](http://host.docker.internal:8090/dashboard/#/http/services)), then navigate a browser to [`http://host.docker.internal:8080/auth/`](http://host.docker.internal:8080/auth/).
+4. Click on *Administration Console* and log in with the credentials specified in `.env`.
+   Then import the project realm by hovering over *Master* and clicking on *Add realm*.
+   Select the file `setup/realm-export.json` and click *Create*.
+5. Create a user by clicking on *Users* and then *Add User*.
+   Specify the username of the user and then click *Save*.
+   Set the credentials of the user by selecting the *Credentials* tab.
+   Enter the password twice, disable the *Temporary* switch and click *Set Password*.
+   **Optional**: Assign the user a role by selecting the tab *Role Mappings*, select a role the user should be assigned (e.g. *admin*) and click *Add selected >*.
+6. Set up the secrets of the services by clicking on *Clients*.
+   For each client (*inventory*, *order*, *payment* and *shipping*), click on the respective client, select the tab *Credentials* and copy the secret.
+   If the secret hidden with asterisks, click *Regenerate Secret*.
+   Configure the copied secret in the `.env` file for the respective service.
+7. Restart the reconfigured services with `docker-compose up -d`.
 
-```bash
-cd inventory-service
-gradlew build
-java -jar build/libs/inventory-service-1.0-SNAPSHOT.jar
+The services are now up and running.
+An access token can be obtained with the following request by using the client *external* and the credentials of the user you created.
+
+```http request 
+POST http://host.docker.internal:8080/auth/realms/ma-rest-shop/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=external&client_secret=<secret>&username=admin&password=<password>
 ```
 
-Running the fat-jars requires a Java 14 compatible JRE, and a configured PostgreSQL database.
-The connection data can be specified via environment variables (the prefix varies depending on the service).
+The access token can be specified with the `Bearer` scheme in the HTTP `Authorization` header, or using SwaggerUI.
+SwaggerUI is available at the following locations:
 
-* `INVENTORY_DB_HOST`
-* `INVENTORY_DB_PORT`
-* `INVENTORY_DB_DATABASE`
-* `INVENTORY_DB_USER`
-* `INVENTORY_DB_PASSWORD`
-
-## API Documentation
-
-Each service provides a OpenAPI 3 specification at `/inventory/api/docs` (prefix varies depending on the service).
-SwaggerUI is also available for the specifications at `/inventory/swagger-ui.html` (prefix varies).
-
-To get up and running, just execute the following requests to create the basic required resources.
-
-```http request
-# curl -X POST "http://host.docker.internal:8080/inventory/api/v1/warehouse/" -H "accept: application/hal+json" -H "Content-Type: application/json" -d "{\"name\":\"Warehouse 1\"}"
-POST http://host.docker.internal:8080/inventory/api/v1/warehouse/
-accept: application/hal+json
-Content-Type: application/json
-
-{"name":"Warehouse 1"}
-``` 
-
-```http request
-# curl -X POST "http://host.docker.internal:8080/inventory/api/v1/item/" -H "accept: application/hal+json" -H "Content-Type: application/json" -d "{\"title\":\"Item 1\",\"price\":3.5}"
-POST http://host.docker.internal:8080/inventory/api/v1/item/
-accept: application/hal+json
-Content-Type: application/json
-
-{
-  "title": "Item 1",
-  "price": 3.5
-}
-```
-
-```http request
-# curl -X POST "http://host.docker.internal:8080/inventory/api/v1/item/4/stock/" -H "accept: application/hal+json" -H "Content-Type: application/json" -d "{\"available\":20,\"inStock\":20,\"warehouse\":\"http://host.docker.internal:8080/inventory/api/v1/warehouse/1\"}"
-POST http://host.docker.internal:8080/inventory/api/v1/item/2/stock/
-accept: application/hal+json
-Content-Type: application/json
-
-{
-  "available": 20,
-  "inStock": 20,
-  "warehouse": "http://host.docker.internal:8080/inventory/api/v1/warehouse/1"
-}
-```
-
-```http request
-# curl -X POST "http://host.docker.internal:8080/order/api/v1/order/" -H "accept: application/hal+json" -H "Content-Type: application/json" -d "{\"items\":[{\"item\":\"http://host.docker.internal:8080/inventory/api/v1/item/2\",\"amount\":1}],\"status\":\"created\",\"address\":{\"street\":\"Luitpoldstr. 1\",\"city\":\"Bamberg\",\"zip\":\"96052\"}}"
-POST http://host.docker.internal:8080/order/api/v1/order/
-accept: */*
-Content-Type: application/json
-
-{
-  "items": [
-    {
-      "item": "http://host.docker.internal:8080/inventory/api/v1/item/2",
-      "amount": 1
-    }
-  ],
-  "status": "created",
-  "address": {
-    "street": "Luitpoldstr. 1",
-    "city": "Bamberg",
-    "zip": "96052"
-  }
-}
-```
-
-After executing these requests, a shipment and a payment will be automatically created for the order.
+* http://host.docker.internal:8080/inventory/swagger-ui.html
+* http://host.docker.internal:8080/order/swagger-ui.html
+* http://host.docker.internal:8080/payment/swagger-ui.html
+* http://host.docker.internal:8080/shipping/swagger-ui.html
